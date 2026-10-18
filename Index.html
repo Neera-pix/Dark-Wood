@@ -1,1 +1,1990 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Темный Лес — Карточный Рогалик (100 Карт)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: #0f141b;
+      color: #ffffff;
+    }
+    /* Smartphone Frame on Desktop, Fullscreen on Mobile — zero vertical overflow */
+    .app-shell {
+      width: 100%;
+      max-width: 450px;
+      height: 100dvh;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: #1c252e;
+      border-left: 2px solid #0b0f14;
+      border-right: 2px solid #0b0f14;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 36px rgba(0,0,0,0.85);
+    }
+    .cartoon-panel {
+      background: #27333f;
+      border: 2.5px solid #11171d;
+      border-radius: 11px;
+      box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.08), 0 2.5px 0 #0d1217;
+    }
+    .text-stroke {
+      text-shadow:
+        -1.5px -1.5px 0 #0d1217,
+         1.5px -1.5px 0 #0d1217,
+        -1.5px  1.5px 0 #0d1217,
+         1.5px  1.5px 0 #0d1217,
+         0px 2px 3px rgba(0,0,0,0.65);
+    }
+    .text-stroke-sm {
+      text-shadow:
+        -1.2px -1.2px 0 #0d1217,
+         1.2px -1.2px 0 #0d1217,
+        -1.2px  1.2px 0 #0d1217,
+         1.2px  1.2px 0 #0d1217;
+    }
 
+    /* Card theme colors matching reference image */
+    .card-red {
+      background: linear-gradient(180deg, #df564e 0%, #b5342d 100%);
+      border-color: #151a21;
+    }
+    .card-red .card-art-box { background: #692320; border-color: #231110; }
+    .card-red .card-desc-box { background: #7c2b28; border-color: #3a1413; }
+
+    .card-blue {
+      background: linear-gradient(180deg, #4f93d6 0%, #31669e 100%);
+      border-color: #151a21;
+    }
+    .card-blue .card-art-box { background: #1f3d5a; border-color: #102030; }
+    .card-blue .card-desc-box { background: #295075; border-color: #162c42; }
+
+    .card-green {
+      background: linear-gradient(180deg, #6db353 0%, #498232 100%);
+      border-color: #151a21;
+    }
+    .card-green .card-art-box { background: #2d4c24; border-color: #152411; }
+    .card-green .card-desc-box { background: #3c6330; border-color: #1e3318; }
+
+    .card-purple {
+      background: linear-gradient(180deg, #9b5de5 0%, #6630ad 100%);
+      border-color: #151a21;
+    }
+    .card-purple .card-art-box { background: #3b1f5e; border-color: #1b0d2e; }
+    .card-purple .card-desc-box { background: #4c2978; border-color: #24123b; }
+
+    /* Rarity accents */
+    .rarity-common { box-shadow: 0 3px 0 #0e1318; }
+    .rarity-rare { box-shadow: 0 0 0 2px #38bdf8, 0 3px 8px rgba(56, 189, 248, 0.35); }
+    .rarity-epic { box-shadow: 0 0 0 2px #c084fc, 0 3px 10px rgba(192, 132, 252, 0.45); }
+    .rarity-legendary { box-shadow: 0 0 0 2px #fbbf24, 0 0 14px rgba(251, 191, 36, 0.65); }
+
+    /* Hand Card Item — responsive & never clipped */
+    .hand-card {
+      width: 98px;
+      min-width: 98px;
+      height: 156px;
+      border-width: 2.5px;
+      border-style: solid;
+      border-radius: 9px;
+      display: flex;
+      flex-direction: column;
+      padding: 3.5px;
+      position: relative;
+      transition: transform 0.14s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.14s ease, filter 0.14s ease;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .hand-card:hover, .hand-card:active {
+      transform: translateY(-6px) scale(1.03);
+      z-index: 30 !important;
+    }
+    .hand-card.unplayable {
+      filter: brightness(0.64) saturate(0.75);
+    }
+
+    /* Compact card adjustments on very short mobile screens (< 680px height) */
+    @media (max-height: 690px) {
+      .hand-card {
+        width: 92px;
+        min-width: 92px;
+        height: 142px;
+        padding: 3px;
+      }
+      .sprite-box {
+        width: 102px !important;
+        height: 112px !important;
+      }
+    }
+
+    /* Animations */
+    @keyframes idleFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-3.5px); }
+    }
+    .anim-idle {
+      animation: idleFloat 2.6s ease-in-out infinite;
+    }
+    @keyframes lungeRight {
+      0% { transform: translateX(0) scale(1); }
+      35% { transform: translateX(42px) scale(1.07) rotate(4deg); }
+      100% { transform: translateX(0) scale(1); }
+    }
+    @keyframes lungeLeft {
+      0% { transform: translateX(0) scale(1); }
+      35% { transform: translateX(-42px) scale(1.07) rotate(-4deg); }
+      100% { transform: translateX(0) scale(1); }
+    }
+    @keyframes hitShake {
+      0%, 100% { transform: translateX(0); filter: none; }
+      20% { transform: translateX(-8px) rotate(-3deg); filter: brightness(1.8) sepia(1) hue-rotate(-50deg) saturate(4); }
+      40% { transform: translateX(8px) rotate(3deg); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+    @keyframes shieldPulse {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.16); filter: drop-shadow(0 0 10px #60a5fa); }
+      100% { transform: scale(1); }
+    }
+    @keyframes floatUpFade {
+      0% { opacity: 1; transform: translateY(0) scale(0.85); }
+      25% { opacity: 1; transform: translateY(-12px) scale(1.08); }
+      100% { opacity: 0; transform: translateY(-38px) scale(0.95); }
+    }
+    .lunge-right { animation: lungeRight 0.36s ease-out; }
+    .lunge-left { animation: lungeLeft 0.36s ease-out; }
+    .hit-shake { animation: hitShake 0.4s ease-in-out; }
+    .shield-pulse { animation: shieldPulse 0.38s ease-out; }
+    .floating-text {
+      position: absolute;
+      pointer-events: none;
+      font-weight: 900;
+      font-size: 19px;
+      z-index: 60;
+      animation: floatUpFade 0.9s ease-out forwards;
+    }
+
+    /* Stacked deck button look from reference */
+    .deck-stack-btn {
+      background: #2b3846;
+      border: 2.5px solid #10161d;
+      border-radius: 9px;
+      box-shadow: 0 2.5px 0 #1c252f, 0 4.5px 0 #10161d;
+      transition: transform 0.1s;
+    }
+    .deck-stack-btn:active {
+      transform: translateY(2px);
+    }
+
+    /* Custom thin scrollbar for hand */
+    .hand-scroll::-webkit-scrollbar {
+      height: 4px;
+    }
+    .hand-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 30, 0.4);
+      border-radius: 4px;
+    }
+    .hand-scroll::-webkit-scrollbar-thumb {
+      background: #475b70;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- SAVE TOAST NOTIFICATION -->
+    <div id="saveToast" class="hidden absolute top-14 left-1/2 -translate-x-1/2 z-50 px-3 py-1 rounded-full bg-emerald-900/95 border border-emerald-400 text-emerald-100 text-[11px] font-extrabold shadow-lg pointer-events-none whitespace-nowrap">
+      💾 Прогресс сохранён
+    </div>
+
+    <!-- 1. TOP HEADER BAR -->
+    <header class="cartoon-panel mx-1.5 mt-1 px-2.5 py-1 flex items-center justify-between shrink-0">
+      <!-- Left: HP and Gold -->
+      <div class="flex flex-col gap-0.5 min-w-[84px]">
+        <div class="flex items-center gap-1">
+          <svg class="w-4 h-4 shrink-0 drop-shadow" viewBox="0 0 24 24" fill="#ef4444" stroke="#11171d" stroke-width="2.2">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          <span class="text-sm font-extrabold tracking-tight text-stroke-sm">
+            <span id="topHpCurr" class="text-red-400">80</span><span class="text-slate-300">/</span><span id="topHpMax" class="text-white">80</span>
+          </span>
+        </div>
+        <div class="flex items-center gap-1">
+          <svg class="w-4 h-4 shrink-0 drop-shadow" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9.5" fill="#fbbf24" stroke="#11171d" stroke-width="2.2"/>
+            <circle cx="12" cy="12" r="6" fill="#f59e0b" stroke="#b45309" stroke-width="1.2"/>
+            <text x="12" y="15.5" text-anchor="middle" fill="#fffbeb" font-size="10" font-weight="900">C</text>
+          </svg>
+          <span id="topGold" class="text-sm font-extrabold text-amber-300 text-stroke-sm">142</span>
+        </div>
+      </div>
+
+      <!-- Center: Act & Level Title -->
+      <div class="flex flex-col items-center text-center px-1 min-w-0">
+        <h1 id="actTitle" class="text-[15px] sm:text-[17px] font-extrabold text-white tracking-tight text-stroke leading-tight truncate max-w-[195px]">
+          Акт 1 - Темный лес
+        </h1>
+        <div class="flex items-center gap-1 mt-0.5">
+          <span id="levelBadge" class="text-[10px] font-bold px-2 py-0.2 rounded-full bg-slate-900/85 text-amber-300 border border-slate-700 whitespace-nowrap">
+            Уровень 1 • Босс: Ур. 5
+          </span>
+          <span id="autosaveDot" title="Автосохранение активно" class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950/90 border border-emerald-600/60 text-emerald-300 font-bold">
+            💾
+          </span>
+        </div>
+      </div>
+
+      <!-- Right: 100 Cards Compendium & Settings Button -->
+      <div class="flex items-center gap-1 shrink-0">
+        <button id="btnOpenCatalog" title="Коллекция (100 карт)" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 active:scale-95 border-2 border-slate-950 flex flex-col items-center justify-center shadow">
+          <span class="text-[9px] font-black text-amber-300 leading-none">100</span>
+          <span class="text-[7px] font-bold text-slate-200 leading-none">КАРТ</span>
+        </button>
+        <button id="btnOpenSettings" title="Настройки, Сохранение и Кузница" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 active:scale-95 border-2 border-slate-950 flex items-center justify-center shadow">
+          <svg class="w-4 h-4 text-slate-200" viewBox="0 0 24 24" fill="currentColor" stroke="#0f172a" stroke-width="1.5">
+            <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- 2. STAGE PROGRESSION TRACK (5 Nodes per Cycle: 1 -> 2 -> 3 -> 4 -> 5=BOSS 💀) -->
+    <section class="cartoon-panel mx-1.5 mt-1 px-3 py-1.5 flex items-center justify-between shrink-0" id="stageTrack">
+      <!-- Populated dynamically by renderStageTrack() -->
+    </section>
+
+    <!-- 3. BATTLE ARENA (Flexible height so it fits any smartphone screen cleanly!) -->
+    <main class="relative flex-1 min-h-0 mx-1.5 mt-1 rounded-xl border-[2.5px] border-[#10161d] overflow-hidden flex flex-col justify-between" id="battleArena">
+      <!-- Forest Background SVG matching 1000074387.jpg -->
+      <svg class="absolute inset-0 w-full h-full object-cover pointer-events-none" viewBox="0 0 460 320" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="skyFog" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#8da0a8"/>
+            <stop offset="55%" stop-color="#cbd6da"/>
+            <stop offset="100%" stop-color="#dce4e7"/>
+          </linearGradient>
+        </defs>
+        <rect width="460" height="320" fill="url(#skyFog)"/>
+        <g fill="#6b7f88" opacity="0.65">
+          <rect x="75" y="0" width="16" height="210"/>
+          <rect x="155" y="0" width="14" height="200"/>
+          <rect x="290" y="0" width="18" height="205"/>
+          <rect x="365" y="0" width="14" height="210"/>
+          <path d="M50 0 Q120 50 190 0 Z"/>
+          <path d="M250 0 Q330 60 410 0 Z"/>
+        </g>
+        <path d="M0 215 Q110 195 215 220 L0 235 Z" fill="#526771"/>
+        <path d="M460 210 Q340 192 245 222 L460 235 Z" fill="#526771"/>
+        <g fill="#394b54">
+          <path d="M22 0 L38 0 L44 225 L14 225 Z"/>
+          <path d="M38 65 L82 22 L88 30 L40 80 Z"/>
+          <path d="M118 0 L132 0 L136 218 L112 218 Z"/>
+          <path d="M122 50 L85 15 L78 24 L120 64 Z"/>
+          <path d="M325 0 L340 0 L345 218 L318 218 Z"/>
+          <path d="M335 58 L378 20 L384 28 L338 72 Z"/>
+          <path d="M412 0 L432 0 L438 228 L404 228 Z"/>
+        </g>
+        <path d="M0 222 Q230 212 460 222 L460 320 L0 320 Z" fill="#d3dde0"/>
+        <ellipse cx="115" cy="268" rx="68" ry="12" fill="#b4c3c8"/>
+        <ellipse cx="345" cy="268" rx="68" ry="12" fill="#b4c3c8"/>
+        <path d="M0 0 L18 0 L24 320 L0 320 Z" fill="#1e2a33"/>
+        <path d="M442 0 L460 0 L460 320 L436 320 Z" fill="#1e2a33"/>
+        <path d="M0 265 L22 252 L16 270 L42 260 L34 278 L62 272 L52 288 L88 285 L75 302 L120 305 L0 320 Z" fill="#1e2a33"/>
+        <path d="M460 265 L438 252 L444 270 L418 260 L426 278 L398 272 L408 288 L372 285 L385 302 L340 305 L460 320 Z" fill="#1e2a33"/>
+      </svg>
+
+      <!-- Top Overlay inside Battle Arena -->
+      <div class="relative z-10 flex items-center justify-between px-2.5 pt-1.5">
+        <div id="turnBanner" class="px-2 py-0.5 rounded-full bg-slate-900/85 border border-slate-700 text-[10px] font-extrabold text-emerald-300 tracking-wide">
+          ВАШ ХОД
+        </div>
+        <div class="flex items-center gap-1">
+          <button id="btnQuickSave" class="px-2 py-0.5 rounded-full bg-slate-900/85 hover:bg-slate-800 active:scale-95 border border-slate-600 text-[10px] font-bold text-emerald-300">
+            💾 Сохр.
+          </button>
+          <button id="btnOpenSmithy" class="px-2 py-0.5 rounded-full bg-amber-500/95 hover:bg-amber-400 active:scale-95 border-2 border-slate-950 text-[10px] font-black text-slate-950 shadow">
+            🔥 Лагерь / Улучшить
+          </button>
+        </div>
+      </div>
+
+      <!-- Combatants Container -->
+      <div class="relative z-10 flex items-end justify-between px-3 pb-2 pt-1 flex-1 min-h-0">
+        <!-- LEFT: PLAYER KNIGHT -->
+        <div class="flex flex-col items-center w-[46%] relative" id="playerArea">
+          <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-900/80 text-sky-200 border border-slate-700 mb-0.5">
+            Рыцарь
+          </span>
+          <div class="text-xs sm:text-sm font-black text-white text-stroke mb-0.5 leading-none">
+            HP: <span id="playerHpText">80/80</span>
+          </div>
+          <!-- Health Bar + Shield Badge Row -->
+          <div class="flex items-center w-full max-w-[138px] relative">
+            <div class="w-full h-3.5 bg-[#27333f] border-[2px] border-[#11171d] rounded-md overflow-hidden shadow">
+              <div id="playerHpBar" class="h-full bg-gradient-to-b from-[#ef4444] to-[#b91c1c] transition-all duration-300" style="width: 100%;"></div>
+            </div>
+            <div id="playerTopShieldBadge" class="-ml-2 z-10 w-7 h-8 flex items-center justify-center relative drop-shadow shrink-0">
+              <svg class="w-7 h-8" viewBox="0 0 32 36">
+                <path d="M16 2 L29 7 V17 C29 25.5 16 33 16 33 C16 33 3 25.5 3 17 V7 Z" fill="#94a3b8" stroke="#11171d" stroke-width="2.5"/>
+                <path d="M16 5 L25 9 V16.5 C25 23 16 29 16 29 C16 29 7 23 7 16.5 V9 Z" fill="#64748b"/>
+              </svg>
+              <span id="playerBlockTop" class="absolute text-[11px] font-black text-white text-stroke-sm">8</span>
+            </div>
+          </div>
+
+          <!-- Status Icons Row under Player HP bar -->
+          <div class="flex items-center gap-1 mt-0.5 min-h-[18px] flex-wrap justify-center" id="playerStatuses"></div>
+
+          <!-- Player Knight SVG Character -->
+          <div id="playerSprite" class="sprite-box w-28 h-32 sm:w-32 sm:h-36 flex items-center justify-center relative anim-idle">
+            <svg viewBox="0 0 140 150" class="w-full h-full drop-shadow-md">
+              <path d="M48 56 Q20 85 16 126 Q35 130 56 122 Z" fill="#881337" stroke="#11171d" stroke-width="3.2" stroke-linejoin="round"/>
+              <path d="M58 22 Q36 8 28 24 Q42 32 54 32 Z" fill="#dc2626" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M52 114 L46 140 L64 140 L64 114 Z" fill="#78350f" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M74 114 L76 140 L94 140 L86 114 Z" fill="#78350f" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M48 64 L88 64 L92 115 L44 115 Z" fill="#64748b" stroke="#11171d" stroke-width="3.2" stroke-linejoin="round"/>
+              <path d="M44 98 L92 98 L92 106 L44 106 Z" fill="#78350f" stroke="#11171d" stroke-width="2.5"/>
+              <g>
+                <polygon points="34,94 92,62 96,70 38,102" fill="#e2e8f0" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/>
+                <rect x="33" y="86" width="7" height="20" rx="2" transform="rotate(-28 36 96)" fill="#f59e0b" stroke="#11171d" stroke-width="2.5"/>
+                <circle cx="48" cy="74" r="12" fill="#94a3b8" stroke="#11171d" stroke-width="3"/>
+                <circle cx="36" cy="94" r="7" fill="#78350f" stroke="#11171d" stroke-width="2.5"/>
+              </g>
+              <path d="M48 34 C48 20 88 20 88 34 L90 64 L46 64 Z" fill="#94a3b8" stroke="#11171d" stroke-width="3.2" stroke-linejoin="round"/>
+              <path d="M58 44 H84 V50 H74 V60 H67 V50 H58 Z" fill="#11171d"/>
+              <g id="knightShieldGroup">
+                <path d="M96 62 L128 72 V98 C128 118 96 132 96 132 C96 132 64 118 64 98 V72 Z" fill="#94a3b8" stroke="#11171d" stroke-width="3.2" stroke-linejoin="round"/>
+                <path d="M96 69 L121 77 V97 C121 112 96 124 96 124 C96 124 71 112 71 97 V77 Z" fill="#cbd5e1" stroke="#475569" stroke-width="2"/>
+                <text id="shieldFaceNumber" x="96" y="105" text-anchor="middle" fill="#ffffff" font-size="24" font-weight="900" stroke="#11171d" stroke-width="4" paint-order="stroke">8</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- RIGHT: ENEMY / BOSS (Name on its own line above HP so it never wraps/collides!) -->
+        <div class="flex flex-col items-center w-[46%] relative" id="enemyArea">
+          <span id="enemyNameBadge" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-900/80 text-amber-200 border border-slate-700 mb-0.5 max-w-full truncate">
+            Лесной Гоблин
+          </span>
+          <div class="text-xs sm:text-sm font-black text-white text-stroke mb-0.5 leading-none">
+            HP: <span id="enemyHpText">45/45</span>
+          </div>
+          <!-- Enemy Health Bar -->
+          <div class="w-full max-w-[138px] h-3.5 bg-[#27333f] border-[2px] border-[#11171d] rounded-md overflow-hidden shadow">
+            <div id="enemyHpBar" class="h-full bg-gradient-to-b from-[#ef4444] to-[#b91c1c] transition-all duration-300" style="width: 100%;"></div>
+          </div>
+          <!-- Enemy Intent & Status Row -->
+          <div class="flex items-center justify-center gap-1 mt-0.5 min-h-[20px] flex-wrap" id="enemyIntentRow"></div>
+
+          <!-- Enemy Sprite Container -->
+          <div id="enemySprite" class="sprite-box w-28 h-32 sm:w-32 sm:h-36 flex items-center justify-center relative anim-idle"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 4. MIDDLE CONTROL BAR (Orange Mana Orb 10/10 on left, END TURN green button on right) -->
+    <section class="cartoon-panel mx-1.5 mt-1 px-2.5 py-1.5 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2">
+        <div id="energyOrb" class="w-12 h-12 rounded-full border-[2.5px] border-[#11171d] flex items-center justify-center shadow-lg relative shrink-0"
+             style="background: radial-gradient(circle at 32% 28%, #fde047 0%, #fb923c 45%, #ea580c 90%);">
+          <div class="w-2.5 h-1.5 rounded-full bg-white/50 absolute top-1.5 left-2.5 -rotate-25"></div>
+          <span id="energyText" class="text-base font-black text-white text-stroke">10/10</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-[10px] font-extrabold text-slate-200 uppercase tracking-wider leading-tight">Мана / Энергия</span>
+          <button id="btnCycleManaCap" class="text-left text-[10px] font-bold text-amber-300 hover:underline leading-tight">
+            <span id="relicBonusText">Макс: <span id="manaCapLabel">10</span> (изм.)</span>
+          </button>
+        </div>
+      </div>
+
+      <button id="btnEndTurn" class="px-4 py-2.5 rounded-xl border-[2.5px] border-[#11171d] font-black text-sm sm:text-base tracking-wide text-[#11171d] active:translate-y-0.5 transition-all shadow-md"
+              style="background: linear-gradient(180deg, #bef264 0%, #84cc16 100%); box-shadow: inset 0 2px 0 rgba(255,255,255,0.45), 0 3px 0 #3f6212, 0 5px 0 #11171d;">
+        КОНЕЦ ХОДА
+      </button>
+    </section>
+
+    <!-- 5. HAND CARDS CONTAINER (Safe scroll & centered inner track so left/top cards are never clipped!) -->
+    <section class="mx-1.5 mt-1 px-1.5 pt-2.5 pb-1.5 bg-[#182029] border-[2.5px] border-[#0f141a] rounded-xl overflow-x-auto hand-scroll shrink-0">
+      <div id="handContainer" class="flex items-center gap-1.5 w-max mx-auto min-h-[146px] sm:min-h-[158px]">
+        <!-- Cards in hand rendered here -->
+      </div>
+    </section>
+
+    <!-- 6. BOTTOM BAR (Deck count on left, Info center, Discard count on right) -->
+    <footer class="mx-1.5 my-1 flex items-center justify-between gap-1.5 shrink-0 pb-0.5">
+      <button id="btnOpenDeck" class="deck-stack-btn px-3 py-1.5 flex items-center gap-1 text-xs sm:text-sm font-extrabold text-slate-100">
+        <span>Колода:</span>
+        <span id="drawCount" class="text-amber-300">6</span>
+      </button>
+
+      <div class="flex items-center gap-1.5 text-[11px] font-bold text-slate-300 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800">
+        <span>Всего: <strong id="totalDeckCount" class="text-white">10</strong></span>
+        <span class="text-slate-600">•</span>
+        <span>Побед: <strong id="killsCount" class="text-emerald-400">0</strong></span>
+      </div>
+
+      <button id="btnOpenDiscard" class="deck-stack-btn px-3 py-1.5 flex items-center gap-1 text-xs sm:text-sm font-extrabold text-slate-100">
+        <span>Сброс:</span>
+        <span id="discardCount" class="text-amber-300">0</span>
+      </button>
+    </footer>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- A. POST-COMBAT REWARD MODAL (3 Cards side-by-side in 3-col grid; balanced rarity odds!) -->
+    <div id="rewardModal" class="hidden absolute inset-0 z-50 bg-slate-950/92 backdrop-blur-sm flex flex-col items-center justify-between p-2.5 overflow-y-auto">
+      <div class="w-full text-center mt-0.5">
+        <div id="rewardSubBanner" class="inline-block px-3 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-[11px] font-extrabold mb-0.5">
+          ПОБЕДА НАД ВРАГОМ!
+        </div>
+        <h2 id="rewardTitle" class="text-lg font-black text-white text-stroke leading-tight">Выберите 1 из 3 карт</h2>
+        <p id="rewardHint" class="text-[11px] text-slate-300 mt-0.5 px-1">
+          Дубликат карты <span class="text-emerald-300 font-bold">улучшает её (+1 ур.)</span> вместо добавления копии!
+        </p>
+        <div id="rarityOddsBanner" class="mt-1 inline-block px-2.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] text-slate-300 font-semibold">
+          Шансы: Обычн. 72% • Редк. 23% • Эпич. 4.2% • Легенд. 0.8%
+        </div>
+        <div id="bossRarityNotice" class="hidden mt-1 mx-auto max-w-xs px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500/25 via-purple-500/25 to-amber-500/25 border border-amber-400 text-amber-200 text-[10.5px] font-extrabold">
+          👑 Награда Босса: повышенный шанс Редких и Эпических карт (Легендарные: ~10%) + исцеление!
+        </div>
+      </div>
+
+      <!-- 3 Reward Cards Grid (Fits 3 cards side-by-side cleanly on mobile!) -->
+      <div id="rewardCardsList" class="w-full grid grid-cols-3 gap-1.5 my-2 place-items-center">
+        <!-- 3 interactive reward cards rendered here -->
+      </div>
+
+      <div class="w-full flex items-center justify-center gap-2 mb-1">
+        <button id="btnSkipReward" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-xs font-extrabold text-slate-200">
+          Пропустить (+25 золота)
+        </button>
+      </div>
+    </div>
+
+    <!-- B. DECK / DISCARD / 100-CARD COMPENDIUM MODAL -->
+    <div id="cardsViewerModal" class="hidden absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-sm flex flex-col p-2.5">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <div>
+          <h2 id="viewerTitle" class="text-base font-black text-white">Коллекция: 100 карт</h2>
+          <p id="viewerSubtitle" class="text-[11px] text-slate-400">Все 100 уникальных карт рогалика по редкости</p>
+        </div>
+        <button id="btnCloseViewer" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 font-black text-white">✕</button>
+      </div>
+
+      <div id="catalogFilters" class="flex items-center gap-1 py-1.5 overflow-x-auto shrink-0">
+        <button data-filter="all" class="cat-filter-btn px-2 py-1 rounded-lg text-[11px] font-bold bg-amber-500 text-slate-950">Все (100)</button>
+        <button data-filter="common" class="cat-filter-btn px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-slate-300">Обычные (40)</button>
+        <button data-filter="rare" class="cat-filter-btn px-2 py-1 rounded-lg text-[11px] font-bold bg-sky-900/70 text-sky-200">Редкие (30)</button>
+        <button data-filter="epic" class="cat-filter-btn px-2 py-1 rounded-lg text-[11px] font-bold bg-purple-900/70 text-purple-200">Эпические (20)</button>
+        <button data-filter="legendary" class="cat-filter-btn px-2 py-1 rounded-lg text-[11px] font-bold bg-amber-900/70 text-amber-200">Легендарные (10)</button>
+      </div>
+
+      <div id="viewerGrid" class="flex-1 overflow-y-auto grid grid-cols-3 gap-1.5 py-2 place-items-center"></div>
+    </div>
+
+    <!-- C. CAMPFIRE / SMITHY / SAVE & SETTINGS MODAL -->
+    <div id="smithyModal" class="hidden absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-sm flex flex-col p-2.5">
+      <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+        <div>
+          <h2 class="text-base font-black text-amber-300">🔥 Лагерь, Кузница и Сохранение</h2>
+          <p id="saveStatusSub" class="text-[11px] text-emerald-400 font-semibold">💾 Автосохранение работает автоматически</p>
+        </div>
+        <button id="btnCloseSmithy" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 font-black text-white">✕</button>
+      </div>
+
+      <!-- Campfire & Settings Controls -->
+      <div class="grid grid-cols-3 gap-1.5 my-2 shrink-0">
+        <button id="btnCampHeal" class="p-2 rounded-xl bg-emerald-900/60 hover:bg-emerald-800/70 border border-emerald-500/60 flex flex-col items-center text-center">
+          <span class="text-xs font-black text-emerald-300">❤️ Отдых</span>
+          <span class="text-[10px] text-slate-200 mt-0.5">+25 ОЗ (40C)</span>
+        </button>
+        <button id="btnToggleManaMode" class="p-2 rounded-xl bg-amber-900/50 hover:bg-amber-800/60 border border-amber-500/60 flex flex-col items-center text-center">
+          <span id="manaModeBtnTitle" class="text-xs font-black text-amber-300">⚡ Мана: 10</span>
+          <span class="text-[10px] text-slate-200 mt-0.5">Сменить 10 / 5</span>
+        </button>
+        <button id="btnToggleSound" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 flex flex-col items-center text-center">
+          <span id="soundStatusLabel" class="text-xs font-black text-sky-300">🔊 Звук: ВКЛ</span>
+          <span class="text-[10px] text-slate-300 mt-0.5">Звуковые эффекты боя</span>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-[11px] font-extrabold text-amber-200">Улучшить карту в колоде (50 золота):</span>
+        <span class="text-xs font-black text-amber-400">Золото: <span id="smithyGold">142</span></span>
+      </div>
+
+      <div id="smithyDeckGrid" class="flex-1 overflow-y-auto grid grid-cols-3 gap-1.5 py-1.5 place-items-center"></div>
+
+      <div class="pt-2 border-t border-slate-800 flex justify-between items-center gap-1.5 shrink-0">
+        <button id="btnRestartGame" class="px-2.5 py-2 rounded-lg bg-red-900/80 hover:bg-red-800 border border-red-500 text-[11px] font-bold text-red-100">
+          Начать заново (10 карт)
+        </button>
+        <button id="btnManualSaveModal" class="px-3 py-2 rounded-lg bg-sky-700 hover:bg-sky-600 text-[11px] font-black text-white">
+          💾 Сохранить
+        </button>
+        <button id="btnDoneSmithy" class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-[11px] font-black text-white">
+          Вернуться в бой
+        </button>
+      </div>
+    </div>
+
+    <!-- D. GAME OVER MODAL -->
+    <div id="gameOverModal" class="hidden absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-5 text-center">
+      <div id="gameOverIcon" class="text-6xl mb-2">💀</div>
+      <h2 id="gameOverTitle" class="text-2xl font-black text-red-400 text-stroke">ПОРАЖЕНИЕ</h2>
+      <p id="gameOverStats" class="text-sm text-slate-300 mt-2 max-w-xs"></p>
+      <button id="btnPlayAgain" class="mt-5 px-6 py-3 rounded-xl border-[3px] border-[#11171d] font-black text-lg text-[#11171d]"
+              style="background: linear-gradient(180deg, #bef264 0%, #84cc16 100%);">
+        НОВЫЙ ПОХОД (10 КАРТ)
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. COMPLETE 100-CARD DATABASE
+    // =========================================================================
+    const ALL_100_CARDS = [{"id": 1, "name": "Удар", "cost": 2, "color": "red", "rarity": "common", "icon": "sword", "dmg": 6, "desc": "Наносит {dmg} урона"}, {"id": 2, "name": "Блок", "cost": 2, "color": "blue", "rarity": "common", "icon": "shield", "block": 5, "desc": "Дает {block} брони"}, {"id": 3, "name": "Выстрел", "cost": 2, "color": "green", "rarity": "common", "icon": "arrow", "dmg": 4, "draw": 1, "desc": "Наносит {dmg} урона. +1 карта"}, {"id": 4, "name": "Отравление", "cost": 3, "color": "green", "rarity": "common", "icon": "flask", "dmg": 4, "poison": 2, "desc": "Наносит {dmg} урона и {poison} яда"}, {"id": 5, "name": "Тяжелый выпад", "cost": 4, "color": "red", "rarity": "common", "icon": "greatsword", "dmg": 12, "desc": "Наносит {dmg} урона"}, {"id": 6, "name": "Быстрый укол", "cost": 1, "color": "red", "rarity": "common", "icon": "dagger", "dmg": 4, "desc": "Наносит {dmg} урона"}, {"id": 7, "name": "Удар щитом", "cost": 3, "color": "blue", "rarity": "common", "icon": "shield_bash", "dmg": 4, "block": 4, "desc": "Наносит {dmg} урона и дает {block} брони"}, {"id": 8, "name": "Железная стойка", "cost": 3, "color": "blue", "rarity": "common", "icon": "helm", "block": 7, "desc": "Дает {block} брони"}, {"id": 9, "name": "Двойной порез", "cost": 3, "color": "red", "rarity": "common", "icon": "twin_blades", "dmg": 4, "hits": 2, "desc": "Наносит {dmg} урона 2 раза"}, {"id": 10, "name": "Ядовитый дротик", "cost": 2, "color": "green", "rarity": "common", "icon": "dart", "dmg": 3, "poison": 3, "desc": "Наносит {dmg} урона и {poison} яда"}, {"id": 11, "name": "Укрепление", "cost": 4, "color": "blue", "rarity": "common", "icon": "tower_shield", "block": 11, "desc": "Дает {block} брони"}, {"id": 12, "name": "Подсечка", "cost": 2, "color": "green", "rarity": "common", "icon": "boot", "dmg": 5, "weak": 2, "desc": "Наносит {dmg} урона и {weak} слабости"}, {"id": 13, "name": "Рассечение брони", "cost": 3, "color": "red", "rarity": "common", "icon": "axe", "dmg": 5, "vuln": 2, "desc": "Наносит {dmg} урона и {vuln} уязвимости"}, {"id": 14, "name": "Боевой клич", "cost": 1, "color": "red", "rarity": "common", "icon": "horn", "str": 1, "draw": 1, "desc": "Дает +{str} к силе и 1 карту"}, {"id": 15, "name": "Уворот", "cost": 2, "color": "green", "rarity": "common", "icon": "cloak", "block": 5, "draw": 1, "desc": "Дает {block} брони и 1 карту"}, {"id": 16, "name": "Глухая оборона", "cost": 1, "color": "blue", "rarity": "common", "icon": "buckler", "block": 4, "desc": "Быстро дает {block} брони"}, {"id": 17, "name": "Кровопускание", "cost": 3, "color": "red", "rarity": "common", "icon": "claws", "dmg": 5, "bleed": 3, "desc": "Наносит {dmg} урона и {bleed} кровотечения"}, {"id": 18, "name": "Зазубренная стрела", "cost": 2, "color": "green", "rarity": "common", "icon": "arrow", "dmg": 5, "bleed": 2, "desc": "Наносит {dmg} урона и {bleed} кровотечения"}, {"id": 19, "name": "Малое зелье", "cost": 3, "color": "blue", "rarity": "common", "icon": "heart_potion", "heal": 4, "block": 3, "desc": "Лечит {heal} ОЗ и дает {block} брони"}, {"id": 20, "name": "Плевок кобры", "cost": 1, "color": "green", "rarity": "common", "icon": "fangs", "poison": 3, "desc": "Накладывает {poison} яда"}, {"id": 21, "name": "Рубящий топор", "cost": 4, "color": "red", "rarity": "common", "icon": "axe", "dmg": 10, "vuln": 1, "desc": "Наносит {dmg} урона и {vuln} уязвимости"}, {"id": 22, "name": "Шипастый щит", "cost": 3, "color": "blue", "rarity": "common", "icon": "spiked_shield", "block": 5, "thorns": 2, "desc": "Дает {block} брони и {thorns} шипов"}, {"id": 23, "name": "Метательный нож", "cost": 1, "color": "green", "rarity": "common", "icon": "dagger", "dmg": 3, "poison": 1, "desc": "Наносит {dmg} урона и {poison} яда"}, {"id": 24, "name": "Перевязка", "cost": 2, "color": "blue", "rarity": "common", "icon": "cross", "heal": 5, "desc": "Восстанавливает {heal} здоровья"}, {"id": 25, "name": "Удар с разбега", "cost": 3, "color": "red", "rarity": "common", "icon": "spear", "dmg": 6, "draw": 1, "desc": "Наносит {dmg} урона и берет 1 карту"}, {"id": 26, "name": "Кольчуга", "cost": 3, "color": "blue", "rarity": "common", "icon": "armor", "block": 6, "thorns": 1, "desc": "Дает {block} брони и {thorns} шипов"}, {"id": 27, "name": "Туманный шаг", "cost": 2, "color": "green", "rarity": "common", "icon": "boot", "block": 6, "weak": 1, "desc": "Дает {block} брони и {weak} слабости"}, {"id": 28, "name": "Яростный выпад", "cost": 3, "color": "red", "rarity": "common", "icon": "sword", "dmg": 8, "desc": "Наносит {dmg} урона"}, {"id": 29, "name": "Глоток бодрости", "cost": 1, "color": "purple", "rarity": "common", "icon": "orb", "energy": 3, "desc": "Восстанавливает +{energy} маны"}, {"id": 30, "name": "Лесной капкан", "cost": 2, "color": "green", "rarity": "common", "icon": "trap", "dmg": 4, "vuln": 2, "desc": "Наносит {dmg} урона и {vuln} уязвимости"}, {"id": 31, "name": "Молот кузнеца", "cost": 4, "color": "red", "rarity": "common", "icon": "hammer", "dmg": 11, "block": 4, "desc": "Наносит {dmg} урона и дает {block} брони"}, {"id": 32, "name": "Стальной наруч", "cost": 3, "color": "blue", "rarity": "common", "icon": "gauntlet", "block": 5, "str": 1, "desc": "Дает {block} брони и +{str} к силе"}, {"id": 33, "name": "Кислотная колба", "cost": 3, "color": "green", "rarity": "common", "icon": "flask", "poison": 4, "weak": 1, "desc": "Накладывает {poison} яда и {weak} слабости"}, {"id": 34, "name": "Копье стража", "cost": 3, "color": "red", "rarity": "common", "icon": "spear", "dmg": 6, "block": 3, "desc": "Наносит {dmg} урона и дает {block} брони"}, {"id": 35, "name": "Окоп", "cost": 4, "color": "blue", "rarity": "common", "icon": "tower_shield", "block": 10, "draw": 1, "desc": "Дает {block} брони и 1 карту"}, {"id": 36, "name": "Стрела ветра", "cost": 2, "color": "green", "rarity": "common", "icon": "bow", "dmg": 7, "desc": "Наносит {dmg} урона"}, {"id": 37, "name": "Искра магии", "cost": 2, "color": "purple", "rarity": "common", "icon": "bolt", "dmg": 6, "weak": 1, "desc": "Наносит {dmg} урона и {weak} слабости"}, {"id": 38, "name": "Сбор сил", "cost": 2, "color": "blue", "rarity": "common", "icon": "orb", "block": 5, "energy": 3, "desc": "Дает {block} брони и +{energy} маны"}, {"id": 39, "name": "Удар эфесом", "cost": 2, "color": "red", "rarity": "common", "icon": "sword", "dmg": 5, "weak": 2, "desc": "Наносит {dmg} урона и {weak} слабости"}, {"id": 40, "name": "Травяной отвар", "cost": 2, "color": "green", "rarity": "common", "icon": "heart_potion", "heal": 4, "poison": 2, "desc": "Лечит {heal} ОЗ и накладывает {poison} яда"}, {"id": 41, "name": "Вихрь клинков", "cost": 4, "color": "red", "rarity": "rare", "icon": "twin_blades", "dmg": 5, "hits": 3, "desc": "Наносит {dmg} урона 3 раза"}, {"id": 42, "name": "Бастион", "cost": 5, "color": "blue", "rarity": "rare", "icon": "tower_shield", "block": 14, "thorns": 3, "desc": "Дает {block} брони и {thorns} шипов"}, {"id": 43, "name": "Ливень стрел", "cost": 4, "color": "green", "rarity": "rare", "icon": "bow", "dmg": 4, "hits": 3, "poison": 2, "desc": "Наносит {dmg}x3 урона и {poison} яда"}, {"id": 44, "name": "Чумная бомба", "cost": 4, "color": "green", "rarity": "rare", "icon": "flask", "dmg": 6, "poison": 6, "desc": "Наносит {dmg} урона и {poison} яда"}, {"id": 45, "name": "Кровавая жатва", "cost": 4, "color": "red", "rarity": "rare", "icon": "scythe", "dmg": 10, "lifesteal": 1, "desc": "Наносит {dmg} урона и лечит 50% урона"}, {"id": 46, "name": "Таран броней", "cost": 3, "color": "blue", "rarity": "rare", "icon": "shield_bash", "dmg": 4, "armor_dmg": 1, "desc": "Наносит {dmg} + вся ваша броня урона"}, {"id": 47, "name": "Ярость берсерка", "cost": 3, "color": "red", "rarity": "rare", "icon": "flame_sword", "str": 2, "vuln": 1, "desc": "Дает +{str} к силе и {vuln} уязвимости врагу"}, {"id": 48, "name": "Отравленный клинок", "cost": 3, "color": "green", "rarity": "rare", "icon": "dagger", "dmg": 6, "poison": 4, "desc": "Наносит {dmg} урона и {poison} яда"}, {"id": 49, "name": "Святой щит", "cost": 5, "color": "blue", "rarity": "rare", "icon": "cross", "block": 10, "heal": 6, "desc": "Дает {block} брони и лечит {heal} ОЗ"}, {"id": 50, "name": "Казнь", "cost": 5, "color": "red", "rarity": "rare", "icon": "axe", "dmg": 16, "desc": "Наносит сокрушительные {dmg} урона"}, {"id": 51, "name": "Теневой выстрел", "cost": 3, "color": "green", "rarity": "rare", "icon": "arrow", "dmg": 7, "weak": 2, "draw": 1, "desc": "Наносит {dmg} урона, {weak} слабости, +1 карта"}, {"id": 52, "name": "Магический барьер", "cost": 3, "color": "purple", "rarity": "rare", "icon": "orb", "block": 8, "draw": 1, "desc": "Дает {block} брони и берет 1 карту"}, {"id": 53, "name": "Молния", "cost": 3, "color": "purple", "rarity": "rare", "icon": "bolt", "dmg": 9, "vuln": 2, "desc": "Наносит {dmg} урона и {vuln} уязвимости"}, {"id": 54, "name": "Алтарь крови", "cost": 1, "color": "red", "rarity": "rare", "icon": "chalice", "energy": 4, "str": 1, "desc": "Дает +{energy} маны и +{str} силы"}, {"id": 55, "name": "Удвоение щита", "cost": 4, "color": "blue", "rarity": "rare", "icon": "shield", "block": 6, "double_block": 1, "desc": "Дает {block} брони, затем удваивает броню"}, {"id": 56, "name": "Нейротоксин", "cost": 3, "color": "green", "rarity": "rare", "icon": "skull_flask", "poison": 5, "weak": 2, "desc": "Накладывает {poison} яда и {weak} слабости"}, {"id": 57, "name": "Пронзающее копье", "cost": 4, "color": "red", "rarity": "rare", "icon": "spear", "dmg": 12, "bleed": 4, "desc": "Наносит {dmg} урона и {bleed} кровотечения"}, {"id": 58, "name": "Стена копий", "cost": 4, "color": "blue", "rarity": "rare", "icon": "spiked_shield", "block": 9, "thorns": 5, "desc": "Дает {block} брони и {thorns} шипов"}, {"id": 59, "name": "Адреналин", "cost": 1, "color": "green", "rarity": "rare", "icon": "bolt", "energy": 3, "draw": 2, "desc": "Дает +{energy} маны и 2 карты"}, {"id": 60, "name": "Огненный шар", "cost": 5, "color": "purple", "rarity": "rare", "icon": "fireball", "dmg": 14, "bleed": 3, "desc": "Наносит {dmg} урона и {bleed} горения"}, {"id": 61, "name": "Стальная кожа", "cost": 3, "color": "blue", "rarity": "rare", "icon": "armor", "block": 9, "str": 1, "desc": "Дает {block} брони и +{str} силы"}, {"id": 62, "name": "Серия выпадов", "cost": 3, "color": "red", "rarity": "rare", "icon": "twin_blades", "dmg": 3, "hits": 3, "desc": "Наносит {dmg} урона 3 раза"}, {"id": 63, "name": "Яд василиска", "cost": 4, "color": "green", "rarity": "rare", "icon": "fangs", "poison": 8, "desc": "Накладывает {poison} смертельного яда"}, {"id": 64, "name": "Боевой транс", "cost": 3, "color": "purple", "rarity": "rare", "icon": "eye", "draw": 3, "block": 4, "desc": "Берет 3 карты и дает {block} брони"}, {"id": 65, "name": "Сокрушитель", "cost": 5, "color": "red", "rarity": "rare", "icon": "hammer", "dmg": 13, "vuln": 3, "desc": "Наносит {dmg} урона и {vuln} уязвимости"}, {"id": 66, "name": "Эликсир жизни", "cost": 4, "color": "blue", "rarity": "rare", "icon": "heart_potion", "heal": 8, "block": 4, "desc": "Лечит {heal} ОЗ и дает {block} брони"}, {"id": 67, "name": "Охотничий инстинкт", "cost": 3, "color": "green", "rarity": "rare", "icon": "bow", "dmg": 8, "draw": 2, "desc": "Наносит {dmg} урона и берет 2 карты"}, {"id": 68, "name": "Рунный клинок", "cost": 3, "color": "purple", "rarity": "rare", "icon": "rune_sword", "dmg": 8, "energy": 2, "desc": "Наносит {dmg} урона и возвращает {energy} маны"}, {"id": 69, "name": "Контратака", "cost": 3, "color": "blue", "rarity": "rare", "icon": "shield_bash", "block": 7, "dmg": 6, "desc": "Дает {block} брони и наносит {dmg} урона"}, {"id": 70, "name": "Разрыв артерии", "cost": 3, "color": "red", "rarity": "rare", "icon": "claws", "dmg": 7, "bleed": 5, "desc": "Наносит {dmg} урона и {bleed} кровотечения"}, {"id": 71, "name": "Клинок рока", "cost": 6, "color": "red", "rarity": "epic", "icon": "flame_sword", "dmg": 18, "str": 2, "desc": "Наносит {dmg} урона и дает +{str} к силе"}, {"id": 72, "name": "Крепость стража", "cost": 6, "color": "blue", "rarity": "epic", "icon": "tower_shield", "block": 18, "thorns": 4, "desc": "Дает {block} брони и {thorns} шипов"}, {"id": 73, "name": "Катализатор чумы", "cost": 5, "color": "green", "rarity": "epic", "icon": "skull_flask", "poison": 4, "double_poison": 1, "desc": "Дает +{poison} яда, затем УДВАИВАЕТ яд"}, {"id": 74, "name": "Танец смерти", "cost": 6, "color": "red", "rarity": "epic", "icon": "twin_blades", "dmg": 5, "hits": 4, "desc": "Наносит {dmg} урона 4 раза подряд"}, {"id": 75, "name": "Пожиратель душ", "cost": 6, "color": "purple", "rarity": "epic", "icon": "scythe", "dmg": 14, "lifesteal": 1, "str": 1, "desc": "Наносит {dmg} урона, вампиризм 50% и +{str} силы"}, {"id": 76, "name": "Убийца драконов", "cost": 6, "color": "green", "rarity": "epic", "icon": "bow", "dmg": 15, "vuln": 3, "weak": 3, "desc": "Наносит {dmg} урона, {vuln} уязв. и {weak} слаб."}, {"id": 77, "name": "Эгида королей", "cost": 6, "color": "blue", "rarity": "epic", "icon": "crown_shield", "block": 15, "heal": 7, "draw": 1, "desc": "Дает {block} брони, лечит {heal} ОЗ и +1 карту"}, {"id": 78, "name": "Грозовой шторм", "cost": 6, "color": "purple", "rarity": "epic", "icon": "bolt", "dmg": 7, "hits": 3, "vuln": 2, "desc": "Бьет молнией {dmg}x3 урона и {vuln} уязвимости"}, {"id": 79, "name": "Кровавое безумие", "cost": 4, "color": "red", "rarity": "epic", "icon": "claws", "str": 3, "energy": 3, "draw": 1, "desc": "Дает +{str} силы, +{energy} маны и 1 карту"}, {"id": 80, "name": "Изумрудный туман", "cost": 5, "color": "green", "rarity": "epic", "icon": "flask", "poison": 7, "block": 8, "desc": "Накладывает {poison} яда и дает {block} брони"}, {"id": 81, "name": "Удар бастиона", "cost": 6, "color": "blue", "rarity": "epic", "icon": "shield_bash", "block": 10, "dmg": 6, "armor_dmg": 1, "desc": "Дает {block} брони и бьет на {dmg} + всю броню"}, {"id": 82, "name": "Метеоритный удар", "cost": 7, "color": "purple", "rarity": "epic", "icon": "fireball", "dmg": 26, "vuln": 3, "desc": "Наносит {dmg} урона и {vuln} уязвимости"}, {"id": 83, "name": "Теневой клон", "cost": 5, "color": "green", "rarity": "epic", "icon": "cloak", "dmg": 6, "hits": 2, "block": 6, "desc": "Наносит {dmg}x2 урона и дает {block} брони"}, {"id": 84, "name": "Молот титана", "cost": 7, "color": "red", "rarity": "epic", "icon": "hammer", "dmg": 24, "block": 8, "desc": "Наносит {dmg} урона и дает {block} брони"}, {"id": 85, "name": "Источник маны", "cost": 2, "color": "purple", "rarity": "epic", "icon": "orb", "energy": 5, "draw": 2, "desc": "Дает +{energy} маны и берет 2 карты"}, {"id": 86, "name": "Шипы возмездия", "cost": 5, "color": "blue", "rarity": "epic", "icon": "spiked_shield", "block": 10, "thorns": 7, "desc": "Дает {block} брони и {thorns} острых шипов"}, {"id": 87, "name": "Укус мантикоры", "cost": 6, "color": "green", "rarity": "epic", "icon": "fangs", "dmg": 10, "poison": 6, "bleed": 4, "desc": "Наносит {dmg} урона, {poison} яда и {bleed} крови"}, {"id": 88, "name": "Освящение", "cost": 5, "color": "blue", "rarity": "epic", "icon": "cross", "heal": 10, "str": 2, "desc": "Восстанавливает {heal} ОЗ и дает +{str} к силе"}, {"id": 89, "name": "Раскол земли", "cost": 6, "color": "red", "rarity": "epic", "icon": "axe", "dmg": 17, "weak": 3, "vuln": 2, "desc": "Наносит {dmg} урона, {weak} слаб. и {vuln} уязв."}, {"id": 90, "name": "Арканный поток", "cost": 4, "color": "purple", "rarity": "epic", "icon": "rune_sword", "dmg": 11, "draw": 2, "energy": 3, "desc": "Наносит {dmg} урона, +2 карты и +{energy} маны"}, {"id": 91, "name": "Экскалибур", "cost": 7, "color": "red", "rarity": "legendary", "icon": "crown_sword", "dmg": 22, "str": 3, "heal": 6, "desc": "Наносит {dmg} урона, +{str} силы и лечит {heal} ОЗ"}, {"id": 92, "name": "Щит Бессмертного", "cost": 7, "color": "blue", "rarity": "legendary", "icon": "crown_shield", "block": 20, "double_block": 1, "thorns": 5, "desc": "Дает {block} брони, x2 броню и +{thorns} шипов"}, {"id": 93, "name": "Дыхание Чумы", "cost": 7, "color": "green", "rarity": "legendary", "icon": "skull_flask", "dmg": 12, "poison": 10, "double_poison": 1, "desc": "Наносит {dmg} урона, +{poison} яда и УДВАИВАЕТ яд"}, {"id": 94, "name": "Гнев Архидемона", "cost": 8, "color": "red", "rarity": "legendary", "icon": "flame_sword", "dmg": 10, "hits": 4, "lifesteal": 1, "desc": "Наносит {dmg}x4 урона и лечит 50% урона"}, {"id": 95, "name": "Колесо Судьбы", "cost": 2, "color": "purple", "rarity": "legendary", "icon": "orb", "energy": 6, "draw": 3, "str": 2, "desc": "Дает +{energy} маны, 3 карты и +{str} к силе"}, {"id": 96, "name": "Лук Артемиды", "cost": 7, "color": "green", "rarity": "legendary", "icon": "bow", "dmg": 9, "hits": 3, "vuln": 3, "draw": 2, "desc": "3 стрелы по {dmg} урона, {vuln} уязв., +2 карты"}, {"id": 97, "name": "Приговор Небес", "cost": 9, "color": "purple", "rarity": "legendary", "icon": "bolt", "dmg": 35, "vuln": 4, "weak": 4, "desc": "Карает на {dmg} урона, {vuln} уязв. и {weak} слаб."}, {"id": 98, "name": "Сердце Феникса", "cost": 6, "color": "blue", "rarity": "legendary", "icon": "heart_potion", "heal": 16, "block": 16, "energy": 3, "desc": "Лечит {heal} ОЗ, +{block} брони и +{energy} маны"}, {"id": 99, "name": "Тысяча Порезов", "cost": 8, "color": "green", "rarity": "legendary", "icon": "twin_blades", "dmg": 6, "hits": 5, "bleed": 6, "desc": "Наносит {dmg}x5 урона и {bleed} кровотечения"}, {"id": 100, "name": "Аватар Войны", "cost": 8, "color": "red", "rarity": "legendary", "icon": "crown_sword", "dmg": 15, "armor_dmg": 1, "block": 12, "str": 3, "desc": "+{block} брони, +{str} силы, удар {dmg} + броня"}];
+    const SAVE_STORAGE_KEY = 'dark_forest_roguelike_save_v2';
+
+    const RARITY_INFO = {
+      common:    { label: 'Обычная',     short: 'Обычн.', badgeBg: 'bg-slate-700 text-slate-200', borderClass: 'rarity-common' },
+      rare:      { label: 'Редкая',      short: 'Редкая', badgeBg: 'bg-sky-600 text-white',       borderClass: 'rarity-rare' },
+      epic:      { label: 'Эпическая',   short: 'Эпич.',  badgeBg: 'bg-purple-600 text-white',    borderClass: 'rarity-epic' },
+      legendary: { label: 'Легендарная', short: 'Легенд.',badgeBg: 'bg-amber-400 text-slate-950', borderClass: 'rarity-legendary' }
+    };
+
+    // =========================================================================
+    // 2. VECTOR SVG CARD ILLUSTRATIONS
+    // =========================================================================
+    function getCardSvg(iconName) {
+      switch (iconName) {
+        case 'sword':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><path d="M48 10 L54 16 L26 44 L20 38 Z" fill="#cbd5e1" stroke="#11171d" stroke-width="3"/><path d="M54 10 L54 16 L48 10 Z" fill="#f8fafc" stroke="#11171d" stroke-width="2.5"/><path d="M15 35 L29 49 L25 53 L11 39 Z" fill="#b45309" stroke="#11171d" stroke-width="2.8"/><path d="M12 48 L19 41 L23 45 L16 52 Z" fill="#78350f" stroke="#11171d" stroke-width="2.8"/></svg>`;
+        case 'shield':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><path d="M32 8 L52 16 V32 C52 46 32 56 32 56 C32 56 12 46 12 32 V16 Z" fill="#94a3b8" stroke="#11171d" stroke-width="3"/><path d="M32 13 L46 19 V31 C46 41 32 49 32 49 C32 49 18 41 18 31 V19 Z" fill="#cbd5e1"/></svg>`;
+        case 'arrow':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><line x1="14" y1="50" x2="48" y2="16" stroke="#92400e" stroke-width="4.5" stroke-linecap="round"/><polygon points="52,12 38,16 48,26" fill="#cbd5e1" stroke="#11171d" stroke-width="2.5"/><polygon points="12,46 18,52 24,46 18,40" fill="#ef4444" stroke="#11171d" stroke-width="2"/></svg>`;
+        case 'flask':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><path d="M26 12 H38 V22 L48 42 C50 47 46 54 40 54 H24 C18 54 14 47 16 42 L26 22 Z" fill="#86efac" stroke="#11171d" stroke-width="3"/><path d="M19 40 Q32 36 45 40 C47 46 44 51 39 51 H25 C20 51 17 46 19 40 Z" fill="#22c55e"/><rect x="24" y="8" width="16" height="5" rx="2" fill="#a16207" stroke="#11171d" stroke-width="2.5"/></svg>`;
+        case 'greatsword':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><polygon points="52,8 56,12 26,46 18,38" fill="#e2e8f0" stroke="#11171d" stroke-width="3"/><rect x="14" y="34" width="22" height="6" rx="2" transform="rotate(45 25 37)" fill="#f59e0b" stroke="#11171d" stroke-width="2.5"/><line x1="18" y1="46" x2="10" y2="54" stroke="#78350f" stroke-width="5" stroke-linecap="round"/></svg>`;
+        case 'dagger':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><path d="M46 14 C48 22 36 36 26 42 L22 38 C28 28 38 16 46 14 Z" fill="#cbd5e1" stroke="#11171d" stroke-width="3"/><line x1="24" y1="40" x2="14" y2="50" stroke="#78350f" stroke-width="4.5" stroke-linecap="round"/></svg>`;
+        case 'shield_bash':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><path d="M30 10 L48 17 V31 C48 44 30 53 30 53 C30 53 12 44 12 31 V17 Z" fill="#60a5fa" stroke="#11171d" stroke-width="3"/><path d="M44 20 L56 14 M46 32 L58 32 M44 44 L56 50" stroke="#fbbf24" stroke-width="3.5" stroke-linecap="round"/></svg>`;
+        case 'twin_blades':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><line x1="14" y1="50" x2="50" y2="14" stroke="#e2e8f0" stroke-width="5" stroke-linecap="round"/><line x1="50" y1="50" x2="14" y2="14" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="32" r="5" fill="#f59e0b" stroke="#11171d" stroke-width="2.5"/></svg>`;
+        case 'axe':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><line x1="16" y1="52" x2="46" y2="14" stroke="#78350f" stroke-width="5" stroke-linecap="round"/><path d="M34 12 C48 10 56 22 48 34 C42 28 36 24 30 24 Z" fill="#cbd5e1" stroke="#11171d" stroke-width="3"/></svg>`;
+        case 'bow':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><path d="M22 10 C44 18 44 46 22 54" fill="none" stroke="#a16207" stroke-width="4.5" stroke-linecap="round"/><line x1="22" y1="10" x2="22" y2="54" stroke="#e2e8f0" stroke-width="2"/><line x1="14" y1="32" x2="48" y2="32" stroke="#cbd5e1" stroke-width="3"/></svg>`;
+        case 'heart_potion':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><circle cx="32" cy="38" r="16" fill="#f43f5e" stroke="#11171d" stroke-width="3"/><rect x="27" y="14" width="10" height="8" fill="#cbd5e1" stroke="#11171d" stroke-width="2.5"/><path d="M32 45 L25 38 C22 35 25 30 29 32 L32 35 L35 32 C39 30 42 35 39 38 Z" fill="#ffe4e6"/></svg>`;
+        case 'bolt':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><polygon points="36,8 16,34 30,34 24,56 48,28 34,28" fill="#facc15" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/></svg>`;
+        case 'orb':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><circle cx="32" cy="32" r="18" fill="#a855f7" stroke="#11171d" stroke-width="3"/><circle cx="26" cy="26" r="6" fill="#e9d5ff" opacity="0.7"/></svg>`;
+        case 'flame_sword':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><path d="M16 48 L48 14" stroke="#f97316" stroke-width="7" stroke-linecap="round"/><path d="M16 48 L48 14" stroke="#fde047" stroke-width="3" stroke-linecap="round"/><circle cx="20" cy="44" r="6" fill="#dc2626" stroke="#11171d" stroke-width="2.5"/></svg>`;
+        case 'skull_flask':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><circle cx="32" cy="36" r="16" fill="#4ade80" stroke="#11171d" stroke-width="3"/><circle cx="27" cy="34" r="3" fill="#11171d"/><circle cx="37" cy="34" r="3" fill="#11171d"/><path d="M28 43 H36" stroke="#11171d" stroke-width="3"/></svg>`;
+        case 'crown_sword':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><polygon points="14,24 22,12 32,20 42,12 50,24" fill="#fbbf24" stroke="#11171d" stroke-width="2.8"/><line x1="32" y1="24" x2="32" y2="54" stroke="#f8fafc" stroke-width="5" stroke-linecap="round"/></svg>`;
+        case 'crown_shield':
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><path d="M32 10 L50 18 V32 C50 45 32 54 32 54 C32 54 14 45 14 32 V18 Z" fill="#fbbf24" stroke="#11171d" stroke-width="3"/><polygon points="22,32 26,22 32,28 38,22 42,32" fill="#fef08a" stroke="#11171d" stroke-width="2"/></svg>`;
+        default:
+          return `<svg viewBox="0 0 64 64" class="w-10 h-10"><polygon points="32,10 50,32 32,54 14,32" fill="#38bdf8" stroke="#11171d" stroke-width="3"/><circle cx="32" cy="32" r="7" fill="#f8fafc"/></svg>`;
+      }
+    }
+
+    // =========================================================================
+    // 3. ENEMIES & BOSSES (Every 5th level is a Boss!)
+    // =========================================================================
+    function getEnemyTemplate(level) {
+      const isBoss = (level % 5 === 0);
+      const scale = 1 + (level - 1) * 0.16;
+
+      if (isBoss) {
+        const bossIndex = Math.floor(level / 5);
+        const bosses = [
+          {
+            name: "БОСС: Вождь Гоблинов",
+            baseHp: 90,
+            baseDmg: 11,
+            svg: `<svg viewBox="0 0 140 150" class="w-full h-full drop-shadow-lg">
+              <path d="M40 36 C20 20 18 6 32 14 C40 20 46 28 48 34 Z" fill="#a16207" stroke="#11171d" stroke-width="3"/>
+              <path d="M100 36 C120 20 122 6 108 14 C100 20 94 28 92 34 Z" fill="#a16207" stroke="#11171d" stroke-width="3"/>
+              <polygon points="48,30 56,12 70,24 84,12 92,30" fill="#fbbf24" stroke="#11171d" stroke-width="3"/>
+              <path d="M42 74 L98 74 L104 120 L36 120 Z" fill="#65a30d" stroke="#11171d" stroke-width="3.2"/>
+              <path d="M38 112 L102 112 L98 134 L42 134 Z" fill="#7c2d12" stroke="#11171d" stroke-width="3"/>
+              <path d="M12 52 L34 52 L38 100 L12 92 Z" fill="#cbd5e1" stroke="#11171d" stroke-width="3"/>
+              <ellipse cx="70" cy="52" rx="28" ry="23" fill="#84cc16" stroke="#11171d" stroke-width="3.2"/>
+              <polygon points="54,46 66,50 54,54" fill="#ef4444"/>
+              <polygon points="86,46 74,50 86,54" fill="#ef4444"/>
+              <path d="M54 64 H86" stroke="#11171d" stroke-width="3.5"/>
+              <polygon points="56,64 60,57 64,64" fill="#f8fafc"/>
+              <polygon points="76,64 80,57 84,64" fill="#f8fafc"/>
+            </svg>`
+          },
+          {
+            name: "БОСС: Архидемон Леса",
+            baseHp: 125,
+            baseDmg: 14,
+            svg: `<svg viewBox="0 0 140 150" class="w-full h-full drop-shadow-lg">
+              <path d="M35 42 C10 15 15 4 36 18 Z" fill="#dc2626" stroke="#11171d" stroke-width="3"/>
+              <path d="M105 42 C130 15 125 4 104 18 Z" fill="#dc2626" stroke="#11171d" stroke-width="3"/>
+              <path d="M38 70 L102 70 L110 132 L30 132 Z" fill="#7f1d1d" stroke="#11171d" stroke-width="3.2"/>
+              <circle cx="70" cy="50" r="25" fill="#b91c1c" stroke="#11171d" stroke-width="3.2"/>
+              <circle cx="60" cy="46" r="4.5" fill="#fde047"/>
+              <circle cx="80" cy="46" r="4.5" fill="#fde047"/>
+              <path d="M55 60 Q70 70 85 60" fill="none" stroke="#fde047" stroke-width="3"/>
+            </svg>`
+          },
+          {
+            name: "БОСС: Король Лич",
+            baseHp: 160,
+            baseDmg: 17,
+            svg: `<svg viewBox="0 0 140 150" class="w-full h-full drop-shadow-lg">
+              <polygon points="46,28 56,8 70,22 84,8 94,28" fill="#a855f7" stroke="#11171d" stroke-width="3"/>
+              <path d="M36 68 L104 68 L114 136 L26 136 Z" fill="#3b0764" stroke="#11171d" stroke-width="3.2"/>
+              <circle cx="70" cy="48" r="22" fill="#e2e8f0" stroke="#11171d" stroke-width="3.2"/>
+              <circle cx="61" cy="46" r="4.5" fill="#38bdf8"/>
+              <circle cx="79" cy="46" r="4.5" fill="#38bdf8"/>
+            </svg>`
+          }
+        ];
+        const chosen = bosses[(bossIndex - 1) % bosses.length];
+        return {
+          name: chosen.name,
+          isBoss: true,
+          maxHp: Math.round(chosen.baseHp + (bossIndex - 1) * 35),
+          baseDmg: Math.round(chosen.baseDmg + (bossIndex - 1) * 3),
+          svg: chosen.svg
+        };
+      }
+
+      if (level === 1) {
+        return {
+          name: "Лесной Гоблин",
+          isBoss: false,
+          maxHp: 45,
+          baseDmg: 6,
+          svg: getReferenceGoblinSvg()
+        };
+      }
+
+      const regularPool = [
+        { name: "Лесной Гоблин", hp: 45, dmg: 6, svg: getReferenceGoblinSvg() },
+        { name: "Орк-Крушитель", hp: 56, dmg: 8, svg: getOrcSvg() },
+        { name: "Ядовитый Паук", hp: 44, dmg: 7, svg: getSpiderSvg() },
+        { name: "Темный Скелет", hp: 52, dmg: 8, svg: getSkeletonSvg() }
+      ];
+      const template = regularPool[(level - 1) % regularPool.length];
+      return {
+        name: template.name,
+        isBoss: false,
+        maxHp: Math.round(template.hp * scale),
+        baseDmg: Math.round(template.dmg * (1 + (level - 1) * 0.12)),
+        svg: template.svg
+      };
+    }
+
+    function getReferenceGoblinSvg() {
+      return `<svg viewBox="0 0 140 150" class="w-full h-full drop-shadow-md">
+        <path d="M52 38 C36 26 34 12 44 16 C50 20 54 28 56 34 Z" fill="#9a5b32" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M88 38 C104 26 106 12 96 16 C90 20 86 28 84 34 Z" fill="#9a5b32" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M44 46 L22 40 L38 58 Z" fill="#84a955" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M96 46 L118 40 L102 58 Z" fill="#84a955" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M54 110 L46 138 L62 138 L64 114 Z" fill="#84a955" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M86 110 L92 138 L76 138 L76 114 Z" fill="#84a955" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M50 70 L90 70 L88 106 L52 106 Z" fill="#84a955" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/>
+        <polygon points="50,102 90,102 88,120 78,113 70,122 62,113 52,120" fill="#5c3317" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M50 72 L34 102 L44 108 L54 84 Z" fill="#84a955" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M90 72 L106 102 L96 108 L86 84 Z" fill="#84a955" stroke="#11171d" stroke-width="3" stroke-linejoin="round"/>
+        <ellipse cx="70" cy="54" rx="24" ry="20" fill="#84a955" stroke="#11171d" stroke-width="3.2"/>
+        <polygon points="54,48 65,52 55,55" fill="#f59e0b" stroke="#11171d" stroke-width="1.5"/>
+        <polygon points="86,48 75,52 85,55" fill="#f59e0b" stroke="#11171d" stroke-width="1.5"/>
+        <path d="M58 64 H82" stroke="#11171d" stroke-width="3" stroke-linecap="round"/>
+        <polygon points="59,64 62,59 65,64" fill="#ffffff" stroke="#11171d" stroke-width="1.5"/>
+      </svg>`;
+    }
+
+    function getOrcSvg() {
+      return `<svg viewBox="0 0 140 150" class="w-full h-full drop-shadow-md">
+        <path d="M40 68 L100 68 L96 116 L44 116 Z" fill="#4d7c0f" stroke="#11171d" stroke-width="3.2"/>
+        <path d="M44 112 L96 112 L92 136 L48 136 Z" fill="#78350f" stroke="#11171d" stroke-width="3"/>
+        <circle cx="70" cy="50" r="23" fill="#65a30d" stroke="#11171d" stroke-width="3.2"/>
+        <circle cx="61" cy="46" r="3.5" fill="#ef4444"/>
+        <circle cx="79" cy="46" r="3.5" fill="#ef4444"/>
+        <polygon points="56,62 60,54 64,62" fill="#f8fafc" stroke="#11171d" stroke-width="1.5"/>
+        <polygon points="76,62 80,54 84,62" fill="#f8fafc" stroke="#11171d" stroke-width="1.5"/>
+      </svg>`;
+    }
+
+    function getSpiderSvg() {
+      return `<svg viewBox="0 0 140 150" class="w-full h-full drop-shadow-md">
+        <g stroke="#11171d" stroke-width="4" stroke-linecap="round" fill="none">
+          <path d="M50 86 L20 68 L14 96"/>
+          <path d="M50 94 L18 92 L12 118"/>
+          <path d="M90 86 L120 68 L126 96"/>
+          <path d="M90 94 L122 92 L128 118"/>
+        </g>
+        <ellipse cx="70" cy="92" rx="28" ry="22" fill="#312e81" stroke="#11171d" stroke-width="3.2"/>
+        <circle cx="62" cy="86" r="4" fill="#22c55e"/>
+        <circle cx="78" cy="86" r="4" fill="#22c55e"/>
+      </svg>`;
+    }
+
+    function getSkeletonSvg() {
+      return `<svg viewBox="0 0 140 150" class="w-full h-full drop-shadow-md">
+        <rect x="52" y="70" width="36" height="44" rx="6" fill="#cbd5e1" stroke="#11171d" stroke-width="3"/>
+        <circle cx="70" cy="46" r="21" fill="#f1f5f9" stroke="#11171d" stroke-width="3.2"/>
+        <circle cx="62" cy="44" r="4.5" fill="#11171d"/>
+        <circle cx="78" cy="44" r="4.5" fill="#11171d"/>
+        <line x1="28" y1="98" x2="54" y2="58" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
+      </svg>`;
+    }
+
+    // =========================================================================
+    // 4. WEB AUDIO SYNTHESIZER
+    // =========================================================================
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    function playSfx(type) {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) audioCtx = new AudioContextClass();
+        }
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'attack') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(75, now + 0.14);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+          osc.start(now);
+          osc.stop(now + 0.15);
+        } else if (type === 'block') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(520, now + 0.12);
+          gain.gain.setValueAtTime(0.14, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.14);
+          osc.start(now);
+          osc.stop(now + 0.14);
+        } else if (type === 'upgrade') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.setValueAtTime(660, now + 0.08);
+          osc.frequency.setValueAtTime(880, now + 0.16);
+          gain.gain.setValueAtTime(0.16, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.30);
+          osc.start(now);
+          osc.stop(now + 0.30);
+        } else if (type === 'error') {
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(130, now);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        }
+      } catch (e) {}
+    }
+
+    // =========================================================================
+    // 5. GAME STATE, MANA SYSTEM (10 OR 5) & PERSISTENCE (LOCALSTORAGE)
+    // =========================================================================
+    const state = {
+      level: 1,
+      kills: 0,
+      gold: 142,
+      player: {
+        hp: 80,
+        maxHp: 80,
+        block: 8,
+        energy: 10,
+        maxEnergy: 10, // Default 10 Mana! Can be toggled between 10 and 5
+        str: 0,
+        thorns: 0
+      },
+      enemy: {
+        name: "Лесной Гоблин",
+        isBoss: false,
+        hp: 45,
+        maxHp: 45,
+        block: 0,
+        baseDmg: 6,
+        intentType: 'attack',
+        intentDmg: 6,
+        intentBlock: 0,
+        poison: 0,
+        bleed: 0,
+        weak: 0,
+        vuln: 0
+      },
+      fullDeck: [],
+      drawPile: [],
+      hand: [],
+      discardPile: [],
+      pendingReward: null, // Stores { wasBoss, goldGain, cardIds: [...] } if reward modal is open
+      busy: false,
+      catalogFilter: 'all'
+    };
+
+    let uidCounter = 1;
+
+    function showToast(msg) {
+      const t = document.getElementById('saveToast');
+      if (!t) return;
+      t.textContent = msg;
+      t.classList.remove('hidden');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.add('hidden'), 2000);
+    }
+
+    function saveProgress(showNotification = false) {
+      try {
+        const payload = {
+          version: 2,
+          savedAt: Date.now(),
+          uidCounter,
+          soundEnabled,
+          level: state.level,
+          kills: state.kills,
+          gold: state.gold,
+          player: state.player,
+          enemy: {
+            name: state.enemy.name,
+            isBoss: state.enemy.isBoss,
+            hp: state.enemy.hp,
+            maxHp: state.enemy.maxHp,
+            block: state.enemy.block,
+            baseDmg: state.enemy.baseDmg,
+            intentType: state.enemy.intentType,
+            intentDmg: state.enemy.intentDmg,
+            intentBlock: state.enemy.intentBlock,
+            poison: state.enemy.poison,
+            bleed: state.enemy.bleed,
+            weak: state.enemy.weak,
+            vuln: state.enemy.vuln
+          },
+          fullDeck: state.fullDeck,
+          drawPile: state.drawPile,
+          hand: state.hand,
+          discardPile: state.discardPile,
+          pendingReward: state.pendingReward
+        };
+        localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(payload));
+        const dot = document.getElementById('autosaveDot');
+        if (dot) {
+          dot.textContent = '💾✓';
+          setTimeout(() => { dot.textContent = '💾'; }, 900);
+        }
+        if (showNotification) {
+          showToast('💾 Прогресс успешно сохранён!');
+        }
+      } catch (e) {}
+    }
+
+    function loadProgress() {
+      try {
+        const raw = localStorage.getItem(SAVE_STORAGE_KEY);
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (!data || !Array.isArray(data.fullDeck) || data.fullDeck.length === 0) return false;
+
+        uidCounter = data.uidCounter || 20;
+        soundEnabled = typeof data.soundEnabled === 'boolean' ? data.soundEnabled : true;
+        state.level = data.level || 1;
+        state.kills = data.kills || 0;
+        state.gold = typeof data.gold === 'number' ? data.gold : 142;
+
+        if (data.player && data.player.hp > 0) {
+          state.player = {
+            hp: data.player.hp,
+            maxHp: data.player.maxHp || 80,
+            block: data.player.block || 0,
+            energy: typeof data.player.energy === 'number' ? data.player.energy : (data.player.maxEnergy || 10),
+            maxEnergy: data.player.maxEnergy || 10,
+            str: data.player.str || 0,
+            thorns: data.player.thorns || 0
+          };
+        } else {
+          return false;
+        }
+
+        state.fullDeck = data.fullDeck;
+        state.drawPile = Array.isArray(data.drawPile) ? data.drawPile : [];
+        state.hand = Array.isArray(data.hand) ? data.hand : [];
+        state.discardPile = Array.isArray(data.discardPile) ? data.discardPile : [];
+        state.pendingReward = data.pendingReward || null;
+
+        const tmpl = getEnemyTemplate(state.level);
+        if (data.enemy && data.enemy.hp > 0) {
+          state.enemy = {
+            ...data.enemy,
+            svg: tmpl.svg
+          };
+        } else {
+          state.enemy = {
+            name: tmpl.name,
+            isBoss: tmpl.isBoss,
+            hp: tmpl.maxHp,
+            maxHp: tmpl.maxHp,
+            block: 0,
+            baseDmg: tmpl.baseDmg,
+            intentType: 'attack',
+            intentDmg: tmpl.baseDmg,
+            intentBlock: 0,
+            poison: 0,
+            bleed: 0,
+            weak: 0,
+            vuln: 0,
+            svg: tmpl.svg
+          };
+        }
+
+        document.getElementById('enemySprite').innerHTML = state.enemy.svg;
+        state.busy = false;
+
+        if (state.pendingReward && Array.isArray(state.pendingReward.cardIds)) {
+          state.busy = true;
+          renderAll();
+          restorePendingRewardModal();
+        } else {
+          if (state.hand.length === 0 && state.drawPile.length === 0 && state.discardPile.length === 0) {
+            state.drawPile = shuffleArray(state.fullDeck.map(c => ({ ...c })));
+            drawCards(4);
+          }
+          renderAll();
+        }
+
+        showToast(`💾 Прогресс загружен (Уровень ${state.level})`);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function clearSavedProgress() {
+      try {
+        localStorage.removeItem(SAVE_STORAGE_KEY);
+      } catch (e) {}
+    }
+
+    function createStarterDeck() {
+      const starterIds = [1, 2, 3, 4, 1, 2, 1, 2, 3, 1];
+      state.fullDeck = starterIds.map(id => ({
+        uid: uidCounter++,
+        id: id,
+        level: 1
+      }));
+    }
+
+    function getCardBase(cardId) {
+      return ALL_100_CARDS.find(c => c.id === cardId);
+    }
+
+    // Dynamically scales card mana cost if player switches between 10 Max Mana and 5 Max Mana!
+    function computeCardStats(cardId, level = 1, includePlayerBuffs = false) {
+      const base = getCardBase(cardId);
+      const upg = Math.max(0, level - 1);
+      const scaleVal = (val, step) => val ? (val + upg * step) : 0;
+
+      const isFiveManaMode = (state.player.maxEnergy === 5);
+      const effectiveCost = isFiveManaMode
+        ? Math.max(1, Math.round(base.cost * 0.5))
+        : base.cost;
+
+      let dmg = scaleVal(base.dmg || 0, Math.max(2, Math.ceil((base.dmg || 0) * 0.4)));
+      if (includePlayerBuffs && dmg > 0) {
+        dmg += state.player.str;
+        if (state.enemy && state.enemy.vuln > 0) {
+          dmg = Math.round(dmg * 1.5);
+        }
+      }
+
+      const block = scaleVal(base.block || 0, Math.max(2, Math.ceil((base.block || 0) * 0.4)));
+      const poison = scaleVal(base.poison || 0, 2);
+      const bleed = scaleVal(base.bleed || 0, 2);
+      const weak = scaleVal(base.weak || 0, 1);
+      const vuln = scaleVal(base.vuln || 0, 1);
+      const str = scaleVal(base.str || 0, 1);
+      const thorns = scaleVal(base.thorns || 0, 2);
+      const heal = scaleVal(base.heal || 0, 3);
+      const baseEnergyGain = isFiveManaMode && base.energy ? Math.max(1, Math.round(base.energy * 0.5)) : (base.energy || 0);
+      const energy = baseEnergyGain ? (baseEnergyGain + (upg >= 2 ? 1 : 0)) : 0;
+      const draw = base.draw ? (base.draw + (upg >= 2 ? 1 : 0)) : 0;
+
+      let desc = base.desc
+        .replace('{dmg}', dmg)
+        .replace('{block}', block)
+        .replace('{poison}', poison)
+        .replace('{bleed}', bleed)
+        .replace('{weak}', weak)
+        .replace('{vuln}', vuln)
+        .replace('{str}', str)
+        .replace('{thorns}', thorns)
+        .replace('{heal}', heal)
+        .replace('{energy}', energy);
+
+      return {
+        ...base,
+        cost: effectiveCost,
+        level,
+        dmg,
+        block,
+        poison,
+        bleed,
+        weak,
+        vuln,
+        str,
+        thorns,
+        heal,
+        energy,
+        draw,
+        formattedDesc: desc
+      };
+    }
+
+    // =========================================================================
+    // 6. COMBAT ENGINE & TURN FLOW
+    // =========================================================================
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function startLevelCombat(isFirstLoad = false) {
+      state.busy = false;
+      state.pendingReward = null;
+      const tmpl = getEnemyTemplate(state.level);
+      state.enemy = {
+        name: tmpl.name,
+        isBoss: tmpl.isBoss,
+        hp: tmpl.maxHp,
+        maxHp: tmpl.maxHp,
+        block: 0,
+        baseDmg: tmpl.baseDmg,
+        intentType: 'attack',
+        intentDmg: tmpl.baseDmg,
+        intentBlock: 0,
+        poison: 0,
+        bleed: 0,
+        weak: 0,
+        vuln: 0,
+        svg: tmpl.svg
+      };
+
+      document.getElementById('enemySprite').innerHTML = tmpl.svg;
+
+      state.player.energy = state.player.maxEnergy;
+      state.player.str = 0;
+      state.player.thorns = 0;
+      state.player.block = isFirstLoad ? 8 : 0;
+
+      if (isFirstLoad) {
+        state.hand = state.fullDeck.slice(0, 4).map(c => ({ ...c }));
+        state.drawPile = shuffleArray(state.fullDeck.slice(4).map(c => ({ ...c })));
+        state.discardPile = [];
+      } else {
+        state.drawPile = shuffleArray(state.fullDeck.map(c => ({ ...c })));
+        state.hand = [];
+        state.discardPile = [];
+        drawCards(4);
+      }
+
+      rollEnemyIntent();
+      renderAll();
+      saveProgress();
+    }
+
+    function rollEnemyIntent() {
+      const e = state.enemy;
+      if (e.isBoss && Math.random() < 0.35) {
+        e.intentType = 'attack_defend';
+        e.intentDmg = Math.round(e.baseDmg * 0.9);
+        e.intentBlock = Math.round(e.baseDmg * 0.8);
+      } else {
+        e.intentType = 'attack';
+        const variance = Math.floor(Math.random() * 3) - 1;
+        e.intentDmg = Math.max(4, e.baseDmg + variance);
+        e.intentBlock = 0;
+      }
+    }
+
+    function getEffectiveEnemyDmg() {
+      let d = state.enemy.intentDmg;
+      if (state.enemy.weak > 0) {
+        d = Math.floor(d * 0.75);
+      }
+      return Math.max(1, d);
+    }
+
+    function drawCards(count) {
+      for (let i = 0; i < count; i++) {
+        if (state.hand.length >= 7) break;
+        if (state.drawPile.length === 0) {
+          if (state.discardPile.length === 0) break;
+          state.drawPile = shuffleArray(state.discardPile);
+          state.discardPile = [];
+        }
+        const nextCard = state.drawPile.pop();
+        if (nextCard) state.hand.push(nextCard);
+      }
+    }
+
+    function spawnFloatingText(targetElId, text, colorClass = 'text-red-400') {
+      const container = document.getElementById(targetElId);
+      if (!container) return;
+      const el = document.createElement('div');
+      el.className = `floating-text text-stroke ${colorClass}`;
+      el.style.left = `${30 + Math.floor(Math.random() * 32)}%`;
+      el.style.top = '26%';
+      el.textContent = text;
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 900);
+    }
+
+    function triggerAnim(elId, animClass) {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      el.classList.remove('lunge-right', 'lunge-left', 'hit-shake', 'shield-pulse');
+      void el.offsetWidth;
+      el.classList.add(animClass);
+    }
+
+    function playCardFromHand(handIndex) {
+      if (state.busy) return;
+      const cardInst = state.hand[handIndex];
+      if (!cardInst) return;
+
+      const stats = computeCardStats(cardInst.id, cardInst.level, true);
+      if (state.player.energy < stats.cost) {
+        playSfx('error');
+        spawnFloatingText('playerArea', `Нужно ${stats.cost} маны!`, 'text-amber-300');
+        return;
+      }
+
+      state.player.energy -= stats.cost;
+      state.hand.splice(handIndex, 1);
+
+      if (stats.block > 0) {
+        state.player.block += stats.block;
+        playSfx('block');
+        triggerAnim('knightShieldGroup', 'shield-pulse');
+        spawnFloatingText('playerArea', `+${stats.block} 🛡️`, 'text-sky-300');
+      }
+      if (stats.double_block) {
+        const added = state.player.block;
+        state.player.block *= 2;
+        spawnFloatingText('playerArea', `x2 Броня (+${added})`, 'text-sky-300');
+      }
+      if (stats.heal > 0) {
+        const prev = state.player.hp;
+        state.player.hp = Math.min(state.player.maxHp, state.player.hp + stats.heal);
+        spawnFloatingText('playerArea', `+${state.player.hp - prev} ❤️`, 'text-emerald-400');
+      }
+      if (stats.str > 0) {
+        state.player.str += stats.str;
+        spawnFloatingText('playerArea', `+${stats.str} Сила`, 'text-amber-300');
+      }
+      if (stats.thorns > 0) {
+        state.player.thorns += stats.thorns;
+        spawnFloatingText('playerArea', `+${stats.thorns} Шипы`, 'text-emerald-300');
+      }
+      if (stats.energy > 0) {
+        state.player.energy += stats.energy;
+        spawnFloatingText('playerArea', `+${stats.energy} ⚡`, 'text-yellow-300');
+      }
+
+      const hits = stats.hits || 1;
+      let singleHitDmg = stats.dmg || 0;
+      if (stats.armor_dmg) {
+        singleHitDmg += state.player.block;
+      }
+
+      if (singleHitDmg > 0) {
+        playSfx('attack');
+        triggerAnim('playerSprite', 'lunge-right');
+        triggerAnim('enemySprite', 'hit-shake');
+
+        let totalDealt = 0;
+        for (let h = 0; h < hits; h++) {
+          let dmgToDeal = singleHitDmg;
+          if (state.enemy.block > 0) {
+            const absorbed = Math.min(state.enemy.block, dmgToDeal);
+            state.enemy.block -= absorbed;
+            dmgToDeal -= absorbed;
+          }
+          state.enemy.hp = Math.max(0, state.enemy.hp - dmgToDeal);
+          totalDealt += dmgToDeal;
+        }
+        spawnFloatingText('enemyArea', hits > 1 ? `-${totalDealt} (${hits}x)` : `-${totalDealt}`, 'text-red-400');
+
+        if (stats.lifesteal && totalDealt > 0) {
+          const healAmt = Math.max(1, Math.floor(totalDealt * 0.5));
+          state.player.hp = Math.min(state.player.maxHp, state.player.hp + healAmt);
+          spawnFloatingText('playerArea', `+${healAmt} Вампиризм`, 'text-rose-400');
+        }
+      }
+
+      if (stats.poison > 0) {
+        state.enemy.poison += stats.poison;
+        spawnFloatingText('enemyArea', `+${stats.poison} ☠️ Яд`, 'text-lime-400');
+      }
+      if (stats.double_poison && state.enemy.poison > 0) {
+        state.enemy.poison *= 2;
+        spawnFloatingText('enemyArea', `ЯД x2 (${state.enemy.poison})!`, 'text-lime-300');
+      }
+      if (stats.bleed > 0) {
+        state.enemy.bleed += stats.bleed;
+        spawnFloatingText('enemyArea', `+${stats.bleed} 🩸`, 'text-rose-400');
+      }
+      if (stats.weak > 0) {
+        state.enemy.weak += stats.weak;
+        spawnFloatingText('enemyArea', `+${stats.weak} Слабость`, 'text-amber-200');
+      }
+      if (stats.vuln > 0) {
+        state.enemy.vuln += stats.vuln;
+        spawnFloatingText('enemyArea', `+${stats.vuln} Уязвимость`, 'text-orange-400');
+      }
+
+      if (stats.draw > 0) {
+        drawCards(stats.draw);
+      }
+
+      state.discardPile.push(cardInst);
+      renderAll();
+      saveProgress();
+
+      if (state.enemy.hp <= 0) {
+        handleEnemyDefeated();
+      }
+    }
+
+    function endPlayerTurn() {
+      if (state.busy) return;
+      state.busy = true;
+      document.getElementById('turnBanner').textContent = 'ХОД ВРАГА...';
+      document.getElementById('turnBanner').className = 'px-2 py-0.5 rounded-full bg-red-950/90 border border-red-600 text-[10px] font-extrabold text-red-300 tracking-wide';
+
+      while (state.hand.length > 0) {
+        state.discardPile.push(state.hand.pop());
+      }
+      renderAll();
+
+      setTimeout(() => {
+        const e = state.enemy;
+        let dotDmg = 0;
+        if (e.poison > 0) {
+          dotDmg += e.poison;
+          e.poison = Math.max(0, e.poison - 1);
+        }
+        if (e.bleed > 0) {
+          dotDmg += e.bleed;
+          e.bleed = Math.max(0, e.bleed - 1);
+        }
+        if (dotDmg > 0) {
+          e.hp = Math.max(0, e.hp - dotDmg);
+          triggerAnim('enemySprite', 'hit-shake');
+          spawnFloatingText('enemyArea', `-${dotDmg} ☠️`, 'text-lime-400');
+          renderAll();
+          if (e.hp <= 0) {
+            handleEnemyDefeated();
+            return;
+          }
+        }
+
+        setTimeout(() => {
+          const dmg = getEffectiveEnemyDmg();
+          playSfx('attack');
+          triggerAnim('enemySprite', 'lunge-left');
+
+          if (e.intentBlock > 0) {
+            e.block += e.intentBlock;
+          }
+
+          let remainingDmg = dmg;
+          if (state.player.block > 0) {
+            const blocked = Math.min(state.player.block, remainingDmg);
+            state.player.block -= blocked;
+            remainingDmg -= blocked;
+            triggerAnim('knightShieldGroup', 'shield-pulse');
+          }
+
+          if (remainingDmg > 0) {
+            state.player.hp = Math.max(0, state.player.hp - remainingDmg);
+            triggerAnim('playerSprite', 'hit-shake');
+            spawnFloatingText('playerArea', `-${remainingDmg}`, 'text-red-500');
+          } else {
+            spawnFloatingText('playerArea', `Блок!`, 'text-sky-300');
+          }
+
+          if (state.player.thorns > 0) {
+            e.hp = Math.max(0, e.hp - state.player.thorns);
+            spawnFloatingText('enemyArea', `-${state.player.thorns} Шипы`, 'text-emerald-300');
+          }
+
+          if (e.weak > 0) e.weak--;
+          if (e.vuln > 0) e.vuln--;
+
+          renderAll();
+
+          if (e.hp <= 0) {
+            handleEnemyDefeated();
+            return;
+          }
+          if (state.player.hp <= 0) {
+            clearSavedProgress();
+            showGameOver();
+            return;
+          }
+
+          setTimeout(() => {
+            state.player.block = 0;
+            state.player.energy = state.player.maxEnergy;
+            rollEnemyIntent();
+            drawCards(4);
+            state.busy = false;
+            document.getElementById('turnBanner').textContent = 'ВАШ ХОД';
+            document.getElementById('turnBanner').className = 'px-2 py-0.5 rounded-full bg-slate-900/85 border border-slate-700 text-[10px] font-extrabold text-emerald-300 tracking-wide';
+            renderAll();
+            saveProgress();
+          }, 340);
+        }, 340);
+      }, 250);
+    }
+
+    // =========================================================================
+    // 7. BALANCED RARITY DROP SYSTEM (Legendaries are truly rare!)
+    // =========================================================================
+    function pickRewardRarity(isBoss, allowLegendary = true) {
+      const r = Math.random();
+      if (isBoss) {
+        // Bosses drop higher-rarity cards (Rare, Epic, and a small 8%-14% chance for Legendary)
+        const bossNum = Math.floor(state.level / 5);
+        const legChance = allowLegendary ? Math.min(0.14, 0.08 + (bossNum - 1) * 0.02) : 0;
+        const epicChance = 0.42;
+        if (r < legChance) return 'legendary';
+        if (r < legChance + epicChance) return 'epic';
+        return 'rare';
+      }
+
+      // Normal enemies:
+      // Act 1 (levels 1..4): 0% Legendary, 3.5% Epic, 22.5% Rare, 74% Common
+      // Levels 6+: 0.8% Legendary, 4.2% Epic, 23% Rare, 72% Common
+      const legChance = (state.level > 5 && allowLegendary) ? 0.008 : 0;
+      const epicChance = state.level > 5 ? 0.042 : 0.035;
+      const rareChance = 0.23;
+
+      if (r < legChance) return 'legendary';
+      if (r < legChance + epicChance) return 'epic';
+      if (r < legChance + epicChance + rareChance) return 'rare';
+      return 'common';
+    }
+
+    function generateThreeRewardCards(isBoss) {
+      const choices = [];
+      const usedIds = new Set();
+      let hasLegendary = false;
+
+      // 35% chance to include 1 Common/Rare card already in the player's deck so duplicate upgrades happen naturally
+      // (Never force Epic/Legendary duplicates outside normal rarity rolls!)
+      if (!isBoss && state.fullDeck.length > 0 && Math.random() < 0.35) {
+        const eligibleOwned = state.fullDeck.filter(inst => {
+          const b = getCardBase(inst.id);
+          return b && (b.rarity === 'common' || b.rarity === 'rare');
+        });
+        if (eligibleOwned.length > 0) {
+          const sample = eligibleOwned[Math.floor(Math.random() * eligibleOwned.length)];
+          usedIds.add(sample.id);
+          choices.push(getCardBase(sample.id));
+        }
+      }
+
+      while (choices.length < 3) {
+        const targetRarity = pickRewardRarity(isBoss, !hasLegendary);
+        if (targetRarity === 'legendary') hasLegendary = true;
+
+        const pool = ALL_100_CARDS.filter(c => c.rarity === targetRarity && !usedIds.has(c.id));
+        const fallbackPool = ALL_100_CARDS.filter(c => c.rarity === 'common' && !usedIds.has(c.id));
+        const activePool = pool.length > 0 ? pool : fallbackPool;
+        const picked = activePool[Math.floor(Math.random() * activePool.length)];
+        usedIds.add(picked.id);
+        choices.push(picked);
+      }
+
+      return shuffleArray(choices);
+    }
+
+    function handleEnemyDefeated() {
+      state.busy = true;
+      state.kills += 1;
+      const wasBoss = state.enemy.isBoss;
+      const goldGain = wasBoss ? 75 : (22 + state.level * 3);
+      state.gold += goldGain;
+
+      if (wasBoss) {
+        state.player.maxHp += 5;
+        state.player.hp = Math.min(state.player.maxHp, state.player.hp + Math.round(state.player.maxHp * 0.4));
+      }
+
+      const threeCards = generateThreeRewardCards(wasBoss);
+      state.pendingReward = {
+        wasBoss,
+        goldGain,
+        cardIds: threeCards.map(c => c.id)
+      };
+
+      playSfx('upgrade');
+      renderAll();
+      saveProgress();
+
+      setTimeout(() => {
+        restorePendingRewardModal();
+      }, 380);
+    }
+
+    function restorePendingRewardModal() {
+      if (!state.pendingReward) return;
+      const { wasBoss, goldGain, cardIds } = state.pendingReward;
+      const modal = document.getElementById('rewardModal');
+      const subBanner = document.getElementById('rewardSubBanner');
+      const oddsBanner = document.getElementById('rarityOddsBanner');
+      const bossNotice = document.getElementById('bossRarityNotice');
+      const listEl = document.getElementById('rewardCardsList');
+
+      subBanner.textContent = wasBoss
+        ? `👑 БОСС ПОВЕРЖЕН! +${goldGain} ЗОЛОТА`
+        : `⚔️ ВРАГ ПОВЕРЖЕН! +${goldGain} ЗОЛОТА`;
+
+      if (wasBoss) {
+        bossNotice.classList.remove('hidden');
+        oddsBanner.textContent = 'Шансы Босса: Редк. 50% • Эпич. 42% • Легенд. 8%';
+      } else {
+        bossNotice.classList.add('hidden');
+        oddsBanner.textContent = state.level <= 5
+          ? 'Шансы (Акт 1): Обычн. 74% • Редк. 22.5% • Эпич. 3.5%'
+          : 'Шансы: Обычн. 72% • Редк. 23% • Эпич. 4.2% • Легенд. 0.8%';
+      }
+
+      listEl.innerHTML = '';
+
+      cardIds.forEach(id => {
+        const cardBase = getCardBase(id);
+        if (!cardBase) return;
+        const existingInDeck = state.fullDeck.find(c => c.id === cardBase.id);
+        const targetLevel = existingInDeck ? (existingInDeck.level + 1) : 1;
+        const stats = computeCardStats(cardBase.id, targetLevel, false);
+        const rarityMeta = RARITY_INFO[cardBase.rarity];
+
+        const cardWrap = document.createElement('div');
+        cardWrap.className = 'flex flex-col items-center w-full';
+
+        const statusBadge = existingInDeck
+          ? `<div class="mb-1 px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 font-black text-[9px] shadow leading-tight text-center">
+               УЛУЧШИТЬ ДО +${targetLevel - 1}
+             </div>`
+          : `<div class="mb-1 px-1.5 py-0.5 rounded bg-emerald-500/25 border border-emerald-400 text-emerald-200 font-bold text-[9px] leading-tight text-center">
+               + В КОЛОДУ
+             </div>`;
+
+        cardWrap.innerHTML = `
+          ${statusBadge}
+          <div class="hand-card card-${stats.color} ${rarityMeta.borderClass}" style="width: 100%; max-width: 122px; min-width: 96px; height: 174px;">
+            <div class="flex items-center justify-between px-0.5">
+              <div class="w-5 h-5 rounded-full bg-black/45 border-[2px] border-[#11171d] flex items-center justify-center text-[11px] font-black text-amber-300 shrink-0">
+                ${stats.cost}
+              </div>
+              <span class="text-[8px] font-black px-1 py-0.2 rounded ${rarityMeta.badgeBg}">
+                ${rarityMeta.short}
+              </span>
+            </div>
+            <div class="text-center font-black text-[10px] uppercase tracking-tight text-white text-stroke-sm leading-[1.1] min-h-[22px] flex items-center justify-center px-0.5 mt-0.5">
+              <span>${stats.name}${targetLevel > 1 ? ` <span class="text-amber-300">+${targetLevel - 1}</span>` : ''}</span>
+            </div>
+            <div class="card-art-box border-2 rounded-md my-1 flex-1 flex items-center justify-center">
+              ${getCardSvg(stats.icon)}
+            </div>
+            <div class="card-desc-box border-2 rounded-md p-1 min-h-[48px] flex items-center justify-center text-center">
+              <span class="text-[9.5px] font-bold leading-tight text-white text-stroke-sm">${stats.formattedDesc}</span>
+            </div>
+          </div>
+        `;
+
+        cardWrap.querySelector('.hand-card').addEventListener('click', () => {
+          selectRewardCard(cardBase.id);
+        });
+
+        listEl.appendChild(cardWrap);
+      });
+
+      modal.classList.remove('hidden');
+    }
+
+    function selectRewardCard(cardId) {
+      const existing = state.fullDeck.find(c => c.id === cardId);
+      if (existing) {
+        existing.level += 1;
+        playSfx('upgrade');
+      } else {
+        state.fullDeck.push({
+          uid: uidCounter++,
+          id: cardId,
+          level: 1
+        });
+        playSfx('block');
+      }
+      state.pendingReward = null;
+      advanceToNextLevel();
+    }
+
+    function advanceToNextLevel() {
+      document.getElementById('rewardModal').classList.add('hidden');
+      state.pendingReward = null;
+      state.level += 1;
+
+      const stepInCycle = ((state.level - 1) % 5) + 1;
+      if (stepInCycle === 2) {
+        state.player.hp = Math.min(state.player.maxHp, state.player.hp + 8);
+      }
+      startLevelCombat(false);
+    }
+
+    function showGameOver() {
+      const modal = document.getElementById('gameOverModal');
+      document.getElementById('gameOverStats').textContent =
+        `Вы дошли до Уровня ${state.level}, победили врагов: ${state.kills}, и собрали колоду из ${state.fullDeck.length} карт.`;
+      modal.classList.remove('hidden');
+    }
+
+    // =========================================================================
+    // 8. UI RENDERING
+    // =========================================================================
+    function renderStageTrack() {
+      const trackEl = document.getElementById('stageTrack');
+      const actNum = Math.floor((state.level - 1) / 5) + 1;
+      const stepInAct = ((state.level - 1) % 5) + 1;
+
+      const actNames = [
+        "Темный лес",
+        "Проклятые болота",
+        "Горная крепость",
+        "Цитадель Бездны"
+      ];
+      const actName = actNames[(actNum - 1) % actNames.length];
+      document.getElementById('actTitle').textContent = `Акт ${actNum} - ${actName}`;
+
+      const nextBossLvl = actNum * 5;
+      document.getElementById('levelBadge').textContent =
+        stepInAct === 5
+          ? `⚠️ Ур. ${state.level} • БОСС!`
+          : `Ур. ${state.level} • Босс: Ур. ${nextBossLvl}`;
+
+      const nodes = [
+        { step: 1, icon: `<span class="text-base font-black text-slate-100 text-stroke-sm">?</span>` },
+        { step: 2, icon: `<svg class="w-5 h-5" viewBox="0 0 24 24"><path d="M12 2C9 6 7 9 7 13a5 5 0 0 0 10 0c0-4-2-7-5-11z" fill="#f97316" stroke="#11171d" stroke-width="1.8"/><path d="M12 8c-1.5 2-2.5 3.5-2.5 5.5a2.5 2.5 0 0 0 5 0C14.5 11.5 13.5 10 12 8z" fill="#fde047"/></svg>` },
+        { step: 3, icon: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="#60a5fa" stroke="#11171d" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>` },
+        { step: 4, icon: `<svg class="w-5 h-5" viewBox="0 0 24 24" stroke="#11171d" stroke-width="1.8"><line x1="5" y1="19" x2="19" y2="5" stroke="#e2e8f0" stroke-width="3"/><line x1="19" y1="19" x2="5" y2="5" stroke="#cbd5e1" stroke-width="3"/></svg>` },
+        { step: 5, icon: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="#f1f5f9" stroke="#11171d" stroke-width="2"><circle cx="12" cy="11" r="7"/><rect x="9" y="15" width="6" height="4"/><circle cx="9.5" cy="10.5" r="1.6" fill="#11171d"/><circle cx="14.5" cy="10.5" r="1.6" fill="#11171d"/></svg>` }
+      ];
+
+      let html = '';
+      nodes.forEach((n, idx) => {
+        const isCurrent = (n.step === stepInAct);
+        const isPassed = (n.step < stepInAct);
+        const circleStyle = isCurrent
+          ? 'ring-2 ring-amber-400 bg-slate-600 scale-105'
+          : isPassed
+          ? 'bg-emerald-900/70 opacity-75'
+          : 'bg-[#364452]';
+
+        html += `
+          <div class="flex flex-col items-center">
+            <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-[2.5px] border-[#11171d] flex items-center justify-center shadow ${circleStyle}">
+              ${n.icon}
+            </div>
+          </div>
+        `;
+
+        if (idx < nodes.length - 1) {
+          if (n.step <= stepInAct) {
+            html += `
+              <svg class="w-5 h-4 text-slate-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="19" y2="12"></line>
+                <polyline points="13 6 19 12 13 18"></polyline>
+              </svg>
+            `;
+          } else {
+            html += `<div class="h-1 flex-1 max-w-[20px] bg-[#11171d] rounded"></div>`;
+          }
+        }
+      });
+
+      trackEl.innerHTML = html;
+    }
+
+    function renderAll() {
+      document.getElementById('topHpCurr').textContent = state.player.hp;
+      document.getElementById('topHpMax').textContent = state.player.maxHp;
+      document.getElementById('topGold').textContent = state.gold;
+
+      renderStageTrack();
+
+      document.getElementById('playerHpText').textContent = `${state.player.hp}/${state.player.maxHp}`;
+      const pPct = Math.max(0, Math.min(100, (state.player.hp / state.player.maxHp) * 100));
+      document.getElementById('playerHpBar').style.width = `${pPct}%`;
+      document.getElementById('playerBlockTop').textContent = state.player.block;
+      document.getElementById('shieldFaceNumber').textContent = state.player.block;
+
+      let pStatusHtml = `
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="#ef4444" stroke="#11171d" stroke-width="2.2">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="#60a5fa" stroke="#11171d" stroke-width="2.2">
+          <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z"/>
+        </svg>
+      `;
+      if (state.player.str > 0) {
+        pStatusHtml += `<span class="px-1 py-0.2 rounded bg-red-900/90 border border-red-500 text-[9.5px] font-black text-red-200">💪+${state.player.str}</span>`;
+      }
+      if (state.player.thorns > 0) {
+        pStatusHtml += `<span class="px-1 py-0.2 rounded bg-emerald-900/90 border border-emerald-500 text-[9.5px] font-black text-emerald-200">🌵${state.player.thorns}</span>`;
+      }
+      document.getElementById('playerStatuses').innerHTML = pStatusHtml;
+
+      const e = state.enemy;
+      document.getElementById('enemyNameBadge').textContent = e.name;
+      document.getElementById('enemyNameBadge').className = e.isBoss
+        ? 'text-[10px] font-black px-2 py-0.2 rounded bg-amber-500 text-slate-950 border border-slate-950 mb-0.5 max-w-full truncate'
+        : 'text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-900/80 text-amber-200 border border-slate-700 mb-0.5 max-w-full truncate';
+
+      document.getElementById('enemyHpText').textContent = `${e.hp}/${e.maxHp}`;
+      const ePct = Math.max(0, Math.min(100, (e.hp / e.maxHp) * 100));
+      document.getElementById('enemyHpBar').style.width = `${ePct}%`;
+
+      const effDmg = getEffectiveEnemyDmg();
+      let intentHtml = `
+        <div class="flex items-center gap-1 bg-slate-900/75 px-2 py-0.2 rounded-full border border-slate-800">
+          <svg class="w-4 h-4" viewBox="0 0 24 24">
+            <path d="M19 3L21 5L9 17L7 15L19 3Z" fill="#cbd5e1" stroke="#11171d" stroke-width="2"/>
+            <path d="M5 13L11 19L9 21L3 15L5 13Z" fill="#b45309" stroke="#11171d" stroke-width="2"/>
+          </svg>
+          <span class="text-sm font-black text-white text-stroke-sm">${effDmg}</span>
+          ${e.intentBlock > 0 ? `<span class="text-[10px] font-black text-sky-300">+🛡️${e.intentBlock}</span>` : ''}
+        </div>
+      `;
+      if (e.block > 0) intentHtml += `<span class="px-1 py-0.2 rounded bg-sky-900/90 border border-sky-400 text-[9.5px] font-black text-sky-200">🛡️${e.block}</span>`;
+      if (e.poison > 0) intentHtml += `<span class="px-1 py-0.2 rounded bg-lime-900/90 border border-lime-400 text-[9.5px] font-black text-lime-200">☠️${e.poison}</span>`;
+      if (e.bleed > 0) intentHtml += `<span class="px-1 py-0.2 rounded bg-rose-900/90 border border-rose-400 text-[9.5px] font-black text-rose-200">🩸${e.bleed}</span>`;
+      if (e.vuln > 0) intentHtml += `<span class="px-1 py-0.2 rounded bg-orange-900/90 border border-orange-400 text-[9.5px] font-black text-orange-200">💔${e.vuln}</span>`;
+      if (e.weak > 0) intentHtml += `<span class="px-1 py-0.2 rounded bg-amber-900/90 border border-amber-400 text-[9.5px] font-black text-amber-200">💫${e.weak}</span>`;
+      document.getElementById('enemyIntentRow').innerHTML = intentHtml;
+
+      document.getElementById('energyText').textContent = `${state.player.energy}/${state.player.maxEnergy}`;
+      document.getElementById('manaCapLabel').textContent = state.player.maxEnergy;
+      const manaBtnTitle = document.getElementById('manaModeBtnTitle');
+      if (manaBtnTitle) manaBtnTitle.textContent = `⚡ Мана: ${state.player.maxEnergy}`;
+
+      document.getElementById('drawCount').textContent = state.drawPile.length;
+      document.getElementById('discardCount').textContent = state.discardPile.length;
+      document.getElementById('totalDeckCount').textContent = state.fullDeck.length;
+      document.getElementById('killsCount').textContent = state.kills;
+
+      const handEl = document.getElementById('handContainer');
+      handEl.innerHTML = '';
+
+      if (state.hand.length === 0) {
+        handEl.innerHTML = `<div class="w-full text-center text-xs font-bold text-slate-400 py-8 px-4">В руке нет карт — нажмите «КОНЕЦ ХОДА»</div>`;
+        return;
+      }
+
+      state.hand.forEach((cardInst, idx) => {
+        const stats = computeCardStats(cardInst.id, cardInst.level, true);
+        const canPlay = state.player.energy >= stats.cost && !state.busy;
+        const rarityMeta = RARITY_INFO[stats.rarity];
+
+        const cardEl = document.createElement('div');
+        cardEl.className = `hand-card card-${stats.color} ${rarityMeta.borderClass} ${canPlay ? '' : 'unplayable'}`;
+
+        cardEl.innerHTML = `
+          <!-- Header Row: Mana badge + readable white-stroked title -->
+          <div class="flex items-center gap-1 mb-0.5">
+            <div class="w-5 h-5 rounded-full bg-black/45 border-[2px] border-[#11171d] flex items-center justify-center text-[11px] font-black text-amber-300 shrink-0">
+              ${stats.cost}
+            </div>
+            <div class="flex-1 text-center font-black text-[9.5px] uppercase tracking-tight text-white text-stroke-sm leading-[1.05] line-clamp-2">
+              ${stats.name}${stats.level > 1 ? `<span class="text-amber-300"> +${stats.level - 1}</span>` : ''}
+            </div>
+          </div>
+
+          <!-- Center Art Box -->
+          <div class="card-art-box border-[2px] rounded-md flex-1 flex items-center justify-center relative overflow-hidden min-h-[46px]">
+            ${getCardSvg(stats.icon)}
+            ${stats.rarity !== 'common' ? `<span class="absolute bottom-0.5 right-0.5 text-[7.5px] font-black px-1 rounded ${rarityMeta.badgeBg}">${rarityMeta.short}</span>` : ''}
+          </div>
+
+          <!-- Bottom Description Box -->
+          <div class="card-desc-box border-[2px] rounded-md mt-1 px-1 py-1 min-h-[42px] flex items-center justify-center text-center">
+            <span class="text-[9.5px] font-bold leading-tight text-white text-stroke-sm">${stats.formattedDesc}</span>
+          </div>
+        `;
+
+        cardEl.addEventListener('click', () => playCardFromHand(idx));
+        handEl.appendChild(cardEl);
+      });
+    }
+
+    // =========================================================================
+    // 9. MODALS: 100-CARD CATALOG, DECK/DISCARD VIEWER, SMITHY UPGRADER
+    // =========================================================================
+    function renderCardGridItem(cardBase, level = 1, badgeText = '') {
+      const stats = computeCardStats(cardBase.id, level, false);
+      const rarityMeta = RARITY_INFO[stats.rarity];
+      return `
+        <div class="hand-card card-${stats.color} ${rarityMeta.borderClass}" data-card-id="${stats.id}" style="width: 100%; max-width: 116px; min-width: 94px; height: 168px;">
+          <div class="flex items-center justify-between">
+            <div class="w-5 h-5 rounded-full bg-black/45 border-2 border-[#11171d] flex items-center justify-center text-[10.5px] font-black text-amber-300">
+              ${stats.cost}
+            </div>
+            <span class="text-[8px] font-black px-1 py-0.2 rounded ${rarityMeta.badgeBg}">
+              #${stats.id} ${rarityMeta.short}
+            </span>
+          </div>
+          <div class="text-center font-black text-[9.5px] uppercase tracking-tight text-white text-stroke-sm leading-[1.08] min-h-[20px] flex items-center justify-center mt-0.5">
+            <span>${stats.name}${level > 1 ? ` <span class="text-amber-300">+${level - 1}</span>` : ''}</span>
+          </div>
+          <div class="card-art-box border-2 rounded-md my-1 flex-1 flex items-center justify-center relative">
+            ${getCardSvg(stats.icon)}
+            ${badgeText ? `<span class="absolute top-0.5 left-0.5 right-0.5 bg-amber-400 text-slate-950 font-black text-[8px] text-center rounded leading-tight py-0.2">${badgeText}</span>` : ''}
+          </div>
+          <div class="card-desc-box border-2 rounded-md p-1 min-h-[42px] flex items-center justify-center text-center">
+            <span class="text-[9px] font-bold leading-tight text-white text-stroke-sm">${stats.formattedDesc}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function openCatalogModal(filter = 'all') {
+      state.catalogFilter = filter;
+      document.getElementById('viewerTitle').textContent = 'Библиотека: Все 100 Карт';
+      document.getElementById('viewerSubtitle').textContent = 'Шанс Легендарных карт: 0.8% в обычных боях и 8–14% с Боссов!';
+      document.getElementById('catalogFilters').classList.remove('hidden');
+
+      document.querySelectorAll('.cat-filter-btn').forEach(btn => {
+        if (btn.dataset.filter === filter) {
+          btn.classList.add('ring-2', 'ring-white');
+        } else {
+          btn.classList.remove('ring-2', 'ring-white');
+        }
+      });
+
+      const list = filter === 'all'
+        ? ALL_100_CARDS
+        : ALL_100_CARDS.filter(c => c.rarity === filter);
+
+      const grid = document.getElementById('viewerGrid');
+      grid.innerHTML = list.map(c => {
+        const owned = state.fullDeck.find(d => d.id === c.id);
+        return renderCardGridItem(c, owned ? owned.level : 1, owned ? `В колоде (Ур.${owned.level})` : '');
+      }).join('');
+
+      document.getElementById('cardsViewerModal').classList.remove('hidden');
+    }
+
+    function openPileViewer(type) {
+      document.getElementById('catalogFilters').classList.add('hidden');
+      const grid = document.getElementById('viewerGrid');
+      if (type === 'deck') {
+        document.getElementById('viewerTitle').textContent = `Ваша колода (${state.fullDeck.length} карт)`;
+        document.getElementById('viewerSubtitle').textContent = `В стопке добора сейчас: ${state.drawPile.length} карт`;
+        grid.innerHTML = state.fullDeck.map(inst => {
+          const base = getCardBase(inst.id);
+          return renderCardGridItem(base, inst.level, `Ур. ${inst.level}`);
+        }).join('');
+      } else {
+        document.getElementById('viewerTitle').textContent = `Стопка сброса (${state.discardPile.length} карт)`;
+        document.getElementById('viewerSubtitle').textContent = 'Эти карты вернутся в колоду, когда стопка добора закончится';
+        if (state.discardPile.length === 0) {
+          grid.innerHTML = `<div class="col-span-3 text-center text-sm text-slate-400 py-10">Стопка сброса пока пуста</div>`;
+        } else {
+          grid.innerHTML = state.discardPile.map(inst => {
+            const base = getCardBase(inst.id);
+            return renderCardGridItem(base, inst.level, `Ур. ${inst.level}`);
+          }).join('');
+        }
+      }
+      document.getElementById('cardsViewerModal').classList.remove('hidden');
+    }
+
+    function openSmithyModal() {
+      document.getElementById('smithyGold').textContent = state.gold;
+      const grid = document.getElementById('smithyDeckGrid');
+      grid.innerHTML = '';
+
+      state.fullDeck.forEach(inst => {
+        const base = getCardBase(inst.id);
+        const wrapper = document.createElement('div');
+        wrapper.className = 'w-full flex justify-center';
+        wrapper.innerHTML = renderCardGridItem(base, inst.level, `Улучшить: 50C`);
+        wrapper.firstElementChild.addEventListener('click', () => {
+          if (state.gold < 50) {
+            playSfx('error');
+            showToast('Нужно 50 золота для улучшения!');
+            return;
+          }
+          state.gold -= 50;
+          inst.level += 1;
+          playSfx('upgrade');
+          saveProgress();
+          openSmithyModal();
+          renderAll();
+        });
+        grid.appendChild(wrapper.firstElementChild);
+      });
+
+      document.getElementById('smithyModal').classList.remove('hidden');
+    }
+
+    function toggleMaxManaCap() {
+      const newCap = state.player.maxEnergy === 10 ? 5 : 10;
+      state.player.maxEnergy = newCap;
+      state.player.energy = newCap;
+      playSfx('upgrade');
+      renderAll();
+      saveProgress();
+      showToast(`⚡ Максимум маны установлен на ${newCap}`);
+    }
+
+    // =========================================================================
+    // 10. EVENT LISTENERS, LIFECYCLE AUTOSAVE & INITIALIZATION
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      const restored = loadProgress();
+      if (!restored) {
+        createStarterDeck();
+        startLevelCombat(true);
+      }
+
+      document.getElementById('btnEndTurn').addEventListener('click', endPlayerTurn);
+      document.getElementById('btnOpenCatalog').addEventListener('click', () => openCatalogModal('all'));
+      document.getElementById('btnOpenDeck').addEventListener('click', () => openPileViewer('deck'));
+      document.getElementById('btnOpenDiscard').addEventListener('click', () => openPileViewer('discard'));
+      document.getElementById('btnCloseViewer').addEventListener('click', () => {
+        document.getElementById('cardsViewerModal').classList.add('hidden');
+      });
+
+      document.querySelectorAll('.cat-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => openCatalogModal(btn.dataset.filter));
+      });
+
+      document.getElementById('btnOpenSmithy').addEventListener('click', openSmithyModal);
+      document.getElementById('btnOpenSettings').addEventListener('click', openSmithyModal);
+      document.getElementById('btnCloseSmithy').addEventListener('click', () => {
+        document.getElementById('smithyModal').classList.add('hidden');
+      });
+      document.getElementById('btnDoneSmithy').addEventListener('click', () => {
+        document.getElementById('smithyModal').classList.add('hidden');
+      });
+
+      document.getElementById('btnQuickSave').addEventListener('click', () => saveProgress(true));
+      document.getElementById('btnManualSaveModal').addEventListener('click', () => saveProgress(true));
+      document.getElementById('btnCycleManaCap').addEventListener('click', toggleMaxManaCap);
+      document.getElementById('btnToggleManaMode').addEventListener('click', () => {
+        toggleMaxManaCap();
+        openSmithyModal();
+      });
+
+      document.getElementById('btnCampHeal').addEventListener('click', () => {
+        if (state.gold < 40 || state.player.hp >= state.player.maxHp) {
+          playSfx('error');
+          return;
+        }
+        state.gold -= 40;
+        state.player.hp = Math.min(state.player.maxHp, state.player.hp + 25);
+        playSfx('upgrade');
+        saveProgress();
+        openSmithyModal();
+        renderAll();
+      });
+
+      document.getElementById('btnToggleSound').addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        document.getElementById('soundStatusLabel').textContent = soundEnabled ? '🔊 Звук: ВКЛ' : '🔇 Звук: ВЫКЛ';
+        saveProgress();
+      });
+
+      document.getElementById('btnSkipReward').addEventListener('click', () => {
+        state.gold += 25;
+        advanceToNextLevel();
+      });
+
+      function restartFullRun() {
+        clearSavedProgress();
+        document.getElementById('gameOverModal').classList.add('hidden');
+        document.getElementById('smithyModal').classList.add('hidden');
+        document.getElementById('rewardModal').classList.add('hidden');
+        state.level = 1;
+        state.kills = 0;
+        state.gold = 142;
+        state.player.maxHp = 80;
+        state.player.hp = 80;
+        state.player.maxEnergy = 10;
+        state.pendingReward = null;
+        createStarterDeck();
+        startLevelCombat(true);
+        showToast('🔄 Начат новый поход (10 карт)');
+      }
+
+      document.getElementById('btnRestartGame').addEventListener('click', restartFullRun);
+      document.getElementById('btnPlayAgain').addEventListener('click', restartFullRun);
+
+      // Save progress automatically when leaving/closing page or switching mobile app tab
+      window.addEventListener('beforeunload', () => saveProgress(false));
+      window.addEventListener('pagehide', () => saveProgress(false));
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          saveProgress(false);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
